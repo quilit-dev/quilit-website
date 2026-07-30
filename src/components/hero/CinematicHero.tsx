@@ -258,12 +258,12 @@ export function CinematicHero({ className }: { className?: string }) {
 
         {/* ── act I: the headline ──────────────────────────────────────── */}
         <motion.div
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center"
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 pb-16 pt-24 text-center sm:pt-20 lg:pb-0 lg:pt-0"
           style={{ scale: openScale, opacity: openOpacity, willChange: "transform, opacity" }}
         >
           <Eyebrow>Enterprise resource planning · Offline or cloud</Eyebrow>
 
-          <h1 className="mt-7 max-w-5xl text-balance font-display text-[clamp(2.6rem,6.4vw,5.6rem)] font-bold leading-[0.98] tracking-[-0.035em]">
+          <h1 className="mt-5 max-w-5xl text-balance font-display sm:mt-7 text-[clamp(2.6rem,6.4vw,5.6rem)] font-bold leading-[0.98] tracking-[-0.035em]">
             <motion.span
               className="text-emboss block"
               initial={{ opacity: 0, y: 54, rotateX: -22, filter: "blur(18px)" }}
@@ -283,7 +283,7 @@ export function CinematicHero({ className }: { className?: string }) {
           </h1>
 
           <motion.p
-            className="mt-8 max-w-xl text-balance text-[1.06rem] leading-relaxed text-plum-900/60"
+            className="mt-5 max-w-xl text-balance text-[0.98rem] leading-relaxed text-plum-900/60 sm:mt-8 sm:text-[1.06rem]"
             initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 1.1 }}
@@ -293,7 +293,7 @@ export function CinematicHero({ className }: { className?: string }) {
           </motion.p>
 
           <motion.div
-            className="mt-11 flex flex-wrap items-center justify-center gap-3.5"
+            className="mt-7 flex flex-wrap items-center justify-center gap-3 sm:mt-11 sm:gap-3.5"
             initial={{ opacity: 0, y: 26 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 1.28 }}
@@ -308,7 +308,7 @@ export function CinematicHero({ className }: { className?: string }) {
           </motion.div>
 
           <motion.div
-            className="mt-12 flex flex-wrap items-center justify-center gap-x-7 gap-y-3"
+            className="mt-8 hidden flex-wrap items-center justify-center gap-x-7 gap-y-3 sm:mt-12 sm:flex"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1.1, delay: 1.5 }}
@@ -330,7 +330,7 @@ export function CinematicHero({ className }: { className?: string }) {
           </motion.div>
 
           <motion.div
-            className="absolute bottom-8 left-1/2 -translate-x-1/2"
+            className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 sm:block"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 2, duration: 0.8 }}

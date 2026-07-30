@@ -113,7 +113,9 @@ export function Workflow() {
      because "watch it travel" is a sequence, not a wall. */
   const [step, setStep] = useState(0);
   useMotionValueEvent(p, "change", (v) => {
-    const idx = Math.max(0, Math.min(STAGES.length - 1, Math.floor((v - 0.02) / 0.2)));
+    /* Same slice boundaries the desktop cards use (0.06 + i * 0.2), so
+       both layouts advance at identical scroll positions. */
+    const idx = Math.max(0, Math.min(STAGES.length - 1, Math.floor((v - 0.06) / 0.2)));
     setStep(idx);
   });
 
