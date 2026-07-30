@@ -132,8 +132,12 @@ export function Showcase() {
       />
 
       <div className="mt-16 grid gap-8 lg:grid-cols-[19rem_1fr] lg:items-start">
-        {/* module rail */}
-        <Reveal className="lg:sticky lg:top-28">
+        {/* module rail — min-w-0 is load-bearing. A grid child defaults to
+            min-width:auto, so on mobile the single column stretched to this
+            rail's min-content width (all six buttons in a row, ~950px) and
+            took the screenshot with it, rendering it far wider than the
+            viewport and clipping it. */}
+        <Reveal className="min-w-0 lg:sticky lg:top-28">
           <div className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
             {SHOTS.map((s) => {
               const on = s.key === active;
@@ -182,7 +186,7 @@ export function Showcase() {
         </Reveal>
 
         {/* screen + copy */}
-        <Reveal delay={0.1}>
+        <Reveal delay={0.1} className="min-w-0">
           <motion.div
             ref={frameRef}
             style={
@@ -214,7 +218,7 @@ export function Showcase() {
               <div className="screen-glare pointer-events-none absolute inset-0" aria-hidden />
             </div>
 
-            <div className="border-t border-plum-900/6 bg-bone-50 p-8 lg:p-10">
+            <div className="border-t border-plum-900/6 bg-bone-50 p-6 sm:p-8 lg:p-10">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={shot.key}
