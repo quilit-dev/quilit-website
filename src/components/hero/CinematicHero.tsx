@@ -279,7 +279,7 @@ export function CinematicHero({ className }: { className?: string }) {
               animate={{ opacity: 1, y: 0, rotateX: 0, filter: "blur(0px)" }}
               transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
             >
-              Everything your business
+              Your whole business.
             </motion.span>
             <motion.span
               className="block overflow-hidden pb-[0.12em]"
@@ -287,7 +287,7 @@ export function CinematicHero({ className }: { className?: string }) {
               animate={{ clipPath: "inset(0 0% 0 0)" }}
               transition={{ duration: 1.3, ease: [0.83, 0, 0.17, 1], delay: 0.75 }}
             >
-              <span className="text-plum-matte">runs on. One system.</span>
+              <span className="text-plum-matte">In one piece.</span>
             </motion.span>
           </h1>
 
@@ -298,7 +298,7 @@ export function CinematicHero({ className }: { className?: string }) {
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 1.1 }}
           >
             Quotations, point of sale, stock, production, the general ledger and
-            payroll — connected end to end, on your hardware or in the cloud.
+            payroll — one system, one set of numbers, on your hardware or in the cloud.
           </motion.p>
 
           <motion.div
@@ -308,7 +308,7 @@ export function CinematicHero({ className }: { className?: string }) {
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 1.28 }}
           >
             <MagneticButton href="#demo" variant="dark">
-              Book a live demo
+              See it with your data
               <ArrowIcon />
             </MagneticButton>
             <MagneticButton href="#modules" variant="light">
@@ -471,7 +471,7 @@ export function CinematicHero({ className }: { className?: string }) {
               </p>
               <div className="mt-10 flex flex-wrap items-center justify-center gap-3.5">
                 <MagneticButton href="#demo" variant="light">
-                  Book a live demo
+                  See it with your data
                   <ArrowIcon />
                 </MagneticButton>
                 <MagneticButton href="#deployment" variant="glass">
@@ -984,16 +984,16 @@ function StaticHero({ className }: { className?: string }) {
       <div className="relative mx-auto max-w-5xl text-center">
         <Eyebrow>Enterprise resource planning · Offline or cloud</Eyebrow>
         <h1 className="mt-7 text-balance font-display text-[clamp(2.4rem,6vw,4.6rem)] font-bold leading-[1] tracking-[-0.035em]">
-          <span className="text-emboss block">Everything your business</span>
-          <span className="text-plum-matte block">runs on. One system.</span>
+          <span className="text-emboss block">Your whole business.</span>
+          <span className="text-plum-matte block">In one piece.</span>
         </h1>
         <p className="mx-auto mt-8 max-w-xl text-balance text-[1.05rem] leading-relaxed text-plum-900/60">
           Quotations, point of sale, stock, production, the general ledger and
-          payroll — connected end to end, on your hardware or in the cloud.
+          payroll — one system, one set of numbers, on your hardware or in the cloud.
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3.5">
           <a href="#demo" className="btn-tactile-dark rounded-full px-7 py-3.5 text-[0.95rem] font-semibold">
-            Book a live demo
+            See it with your data
           </a>
           <a href="#modules" className="btn-tactile-light rounded-full px-7 py-3.5 text-[0.95rem] font-semibold">
             Explore the platform

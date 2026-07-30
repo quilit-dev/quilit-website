@@ -59,13 +59,13 @@ export function Industries() {
   const images = resolveImageMap();
 
   return (
-    <Section id="industries" tone="obsidian">
+    <Section id="industries" tone="obsidian-lift">
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[900px] -translate-x-1/2"
+        className="pointer-events-none absolute left-1/2 top-1/3 h-[560px] w-[1100px] -translate-x-1/2"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(163,127,156,0.15), transparent 72%)",
+            "radial-gradient(closest-side, rgba(133,96,126,0.22), transparent 74%)",
         }}
       />
 

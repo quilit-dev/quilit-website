@@ -318,9 +318,9 @@ function Card({ industry, imageSrc }: { industry: Industry; imageSrc?: string })
       initial="rest"
       animate="rest"
       whileHover="hover"
-      variants={{ rest: { scale: 1, y: 0 }, hover: { scale: 1.04, y: -8 } }}
+      variants={{ rest: { scale: 1, y: 0 }, hover: { scale: 1.075, y: -14 } }}
       transition={{ duration: 0.5, ease: EASE }}
-      className="relative isolate h-[292px] w-[220px] select-none overflow-hidden rounded-[22px] border border-white/10 bg-obsidian-800 shadow-[0_30px_60px_-30px_rgba(0,0,0,0.95)] sm:h-[360px] sm:w-[272px]"
+      className="group relative isolate h-[292px] w-[220px] select-none overflow-hidden rounded-[22px] border border-white/10 bg-obsidian-800 shadow-[0_30px_60px_-30px_rgba(0,0,0,0.95)] transition-[border-color,box-shadow] duration-500 group-hover:border-plum-300/35 group-hover:shadow-[0_44px_80px_-30px_rgba(0,0,0,1)] sm:h-[360px] sm:w-[272px]"
     >
       <div className="absolute inset-0 -z-10">
         {imageSrc ? (
@@ -361,7 +361,7 @@ function Card({ industry, imageSrc }: { industry: Industry; imageSrc?: string })
       <motion.div
         aria-hidden
         className="absolute inset-0 -z-10 bg-gradient-to-tr from-plum-800/50 to-transparent"
-        variants={{ rest: { opacity: 0.55 }, hover: { opacity: 0.9 } }}
+        variants={{ rest: { opacity: 0.62 }, hover: { opacity: 0.28 } }}
         transition={{ duration: 0.45, ease: EASE }}
       />
 

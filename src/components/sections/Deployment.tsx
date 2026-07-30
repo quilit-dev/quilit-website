@@ -206,7 +206,7 @@ Tell us how you work. We will show you what fits.
           </h3>
           <div className="mt-1 flex flex-wrap justify-center gap-3">
             <Cta href="#demo" variant="dark">
-              Book a demo
+              See it with your data
               <ArrowRight />
             </Cta>
             <Cta href="#modules" variant="quiet">

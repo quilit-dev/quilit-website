@@ -18,62 +18,62 @@ const GROUPS: { key: string; label: string; modules: Module[] }[] = [
     key: "sales",
     label: "Sales",
     modules: [
-      { name: "CRM", desc: "Leads, deals, contacts and a weighted pipeline", icon: "target" },
-      { name: "Clients", desc: "One record per customer, every document attached", icon: "users" },
-      { name: "Quotations", desc: "Quote once, convert to invoice or project", icon: "file" },
-      { name: "Invoices", desc: "Partial and dual-currency payments, idempotent", icon: "card" },
-      { name: "Point of Sale", desc: "Drawer sessions, tax-inclusive pricing, refunds", icon: "cart" },
-      { name: "Promotions", desc: "Time- and quantity-bound automatic discounts", icon: "percent" },
+      { name: "CRM", desc: "Know every customer before they call", icon: "target" },
+      { name: "Clients", desc: "Every document for a client in one place", icon: "users" },
+      { name: "Quotations", desc: "Quote in minutes, convert in one click", icon: "file" },
+      { name: "Invoices", desc: "Get paid without chasing paperwork", icon: "card" },
+      { name: "Point of Sale", desc: "Sell at the counter, post to the books", icon: "cart" },
+      { name: "Promotions", desc: "Run offers without briefing the cashier", icon: "percent" },
     ],
   },
   {
     key: "operations",
     label: "Operations",
     modules: [
-      { name: "Inventory", desc: "Variants, lots, expiry, FIFO / LIFO / average", icon: "package" },
-      { name: "Manufacturing", desc: "Versioned BOMs, QC quarantine, cost variance", icon: "factory" },
-      { name: "Purchases", desc: "PO lifecycle that posts stock and expense", icon: "truck" },
-      { name: "Suppliers", desc: "Vendors, terms and full purchase history", icon: "building" },
-      { name: "Warehouses", desc: "Per-branch stock scoping and comparison", icon: "warehouse" },
-      { name: "Projects", desc: "Budget versus actual, computed from real cost", icon: "briefcase" },
-      { name: "Planning", desc: "Gantt, kanban, list and calendar of one plan", icon: "calendar" },
+      { name: "Inventory", desc: "Never wonder where your stock went", icon: "package" },
+      { name: "Manufacturing", desc: "Know what a batch really cost to make", icon: "factory" },
+      { name: "Purchases", desc: "Receive goods, and the books already know", icon: "truck" },
+      { name: "Suppliers", desc: "See what every supplier has cost you", icon: "building" },
+      { name: "Warehouses", desc: "Track stock across every branch at once", icon: "warehouse" },
+      { name: "Projects", desc: "See a job's profit before it finishes", icon: "briefcase" },
+      { name: "Planning", desc: "See who is doing what, and by when", icon: "calendar" },
     ],
   },
   {
     key: "finance",
     label: "Finance",
     modules: [
-      { name: "Accounting", desc: "Double-entry ledger that always ties out", icon: "book" },
-      { name: "Finance", desc: "Cash-basis summary, ranges, reconciliation", icon: "trend" },
-      { name: "Expenses", desc: "Approval chains and recurring templates", icon: "receipt" },
-      { name: "Cash", desc: "Daily till counts, USD and LBP variance apart", icon: "wallet" },
-      { name: "Fixed Assets", desc: "Register with straight-line depreciation", icon: "landmark" },
-      { name: "Tax", desc: "Named rates, frozen per line, VAT reporting", icon: "percent" },
-      { name: "Reports", desc: "Seven reports, date-filtered, Excel export", icon: "chart" },
+      { name: "Accounting", desc: "Close your books with confidence", icon: "book" },
+      { name: "Finance", desc: "Know what you actually earned this month", icon: "trend" },
+      { name: "Expenses", desc: "No spend leaves without a sign-off", icon: "receipt" },
+      { name: "Cash", desc: "Balance the drawer before you lock up", icon: "wallet" },
+      { name: "Fixed Assets", desc: "Depreciation posts itself, every month", icon: "landmark" },
+      { name: "Tax", desc: "File VAT without rebuilding the numbers", icon: "percent" },
+      { name: "Reports", desc: "Answers, without exporting to a spreadsheet", icon: "chart" },
     ],
   },
   {
     key: "people",
     label: "People",
     modules: [
-      { name: "HR", desc: "Directory, leave, append-only salary timeline", icon: "userCheck" },
-      { name: "Payroll", desc: "Monthly runs with NSSF and tax breakdown", icon: "wallet" },
-      { name: "Contracts", desc: "Structured, printable employment contracts", icon: "file" },
-      { name: "Recruitment", desc: "Positions to applicants to onboarding", icon: "briefcase" },
-      { name: "Activities", desc: "Personal HR queue with built-in reminders", icon: "bell" },
-      { name: "Approvals", desc: "Rule-based multi-step decision chains", icon: "check" },
+      { name: "HR", desc: "Every hire, raise and leave on record", icon: "userCheck" },
+      { name: "Payroll", desc: "Run payroll without a second system", icon: "wallet" },
+      { name: "Contracts", desc: "Issue a contract in minutes, not days", icon: "file" },
+      { name: "Recruitment", desc: "Hire and onboard in one thread", icon: "briefcase" },
+      { name: "Activities", desc: "Nothing about your people slips", icon: "bell" },
+      { name: "Approvals", desc: "The right person approves, every time", icon: "check" },
     ],
   },
   {
     key: "platform",
     label: "Platform",
     modules: [
-      { name: "Users & Roles", desc: "RBAC across every module and action", icon: "shield" },
-      { name: "Audit Log", desc: "Every mutation, user-stamped, permanent", icon: "book2" },
-      { name: "Archives & Bin", desc: "Soft-delete with restore, 30-day purge", icon: "database" },
-      { name: "Backups", desc: "Automatic, checksummed, restore-tested", icon: "layers" },
-      { name: "Settings", desc: "Company, finance, categories, currency", icon: "sliders" },
-      { name: "AI Assistant", desc: "Natural-language insight over your data", icon: "spark", soon: true },
+      { name: "Users & Roles", desc: "People see only what their role allows", icon: "shield" },
+      { name: "Audit Log", desc: "Know who changed what, and when", icon: "book2" },
+      { name: "Archives & Bin", desc: "Undo a mistake without calling support", icon: "database" },
+      { name: "Backups", desc: "Backups that are proven to restore", icon: "layers" },
+      { name: "Settings", desc: "Shape the system without a developer", icon: "sliders" },
+      { name: "AI Assistant", desc: "Ask your data a question, in plain words", icon: "spark", soon: true },
     ],
   },
 ];
@@ -145,29 +145,33 @@ export function Modules() {
                   ease: [0.16, 1, 0.3, 1],
                   delay: i * 0.035,
                 }}
-                whileHover={{ y: -4 }}
-                className="group relative overflow-hidden rounded-[20px] border border-plum-900/8 bg-white p-6 shadow-[0_1px_2px_rgba(42,29,41,0.04)] transition-shadow duration-300 hover:shadow-[0_22px_44px_-26px_rgba(42,29,41,0.34)]"
+                whileHover={{ y: -6 }}
+                className="group relative overflow-hidden rounded-[20px] border border-plum-900/8 bg-white p-6 shadow-[0_1px_2px_rgba(42,29,41,0.04)] transition-[box-shadow,border-color] duration-300 hover:border-plum-600/20 hover:shadow-[0_28px_54px_-26px_rgba(42,29,41,0.42)]"
               >
                 <span
                   aria-hidden
-                  className="absolute -right-14 -top-14 h-28 w-28 rounded-full bg-plum-500/8 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
+                  className="absolute -right-14 -top-14 h-28 w-28 rounded-full bg-plum-500/10 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
+                />
+                <span
+                  aria-hidden
+                  className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-plum-500/55 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
                 />
                 <div className="relative flex items-start gap-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-plum-900/8 bg-gradient-to-b from-plum-100 to-plum-50 text-plum-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)]">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-plum-900/8 bg-gradient-to-b from-plum-100 to-plum-50 text-plum-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-plum-600/25 group-hover:from-plum-600 group-hover:to-plum-800 group-hover:text-white group-hover:shadow-[0_10px_20px_-8px_rgba(42,29,41,0.55)]">
                     <Icon name={m.icon} className="h-[18px] w-[18px]" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="flex flex-wrap items-center gap-2 font-display text-[1.02rem] font-bold tracking-[-0.018em] text-plum-950">
+                    <div className="mb-1.5 font-mono text-[0.56rem] uppercase tracking-[0.14em] text-plum-900/35">
                       {m.name}
+                    </div>
+                    <h3 className="flex flex-wrap items-center gap-2 font-display text-[1rem] font-bold leading-snug tracking-[-0.018em] text-plum-950">
+                      {m.desc}
                       {m.soon && (
                         <span className="rounded-full border border-plum-600/20 bg-plum-600/8 px-2 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.12em] text-plum-600">
                           Coming soon
                         </span>
                       )}
                     </h3>
-                    <p className="mt-1.5 text-[0.88rem] leading-relaxed text-plum-900/55">
-                      {m.desc}
-                    </p>
                   </div>
                 </div>
               </motion.article>

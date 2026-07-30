@@ -3,6 +3,7 @@ import { SiteNav } from "@/components/layout/SiteNav";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { TrustBar } from "@/components/sections/TrustBar";
 import { Modules } from "@/components/sections/Modules";
+import { Workflow } from "@/components/sections/Workflow";
 import { WhyQuilit } from "@/components/sections/WhyQuilit";
 import { Showcase } from "@/components/sections/Showcase";
 import { Industries } from "@/components/sections/Industries";
@@ -22,6 +23,7 @@ export default function Home() {
             instead of one continuous wall of the same surface. */}
         <TrustBar />
         <Modules />
+        <Workflow />
         <WhyQuilit />
         <Showcase />
         <Industries />

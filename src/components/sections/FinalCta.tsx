@@ -83,7 +83,7 @@ export function FinalCta() {
         <Reveal delay={0.2}>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3.5">
             <Cta href="#demo" variant="light">
-              Book a live demo
+              See it with your data
               <ArrowRight />
             </Cta>
             <Cta href="#deployment" variant="glass">

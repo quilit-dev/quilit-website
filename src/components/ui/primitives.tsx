@@ -228,7 +228,7 @@ export function Section({
   children,
 }: {
   id?: string;
-  tone?: "bone" | "bone-deep" | "obsidian";
+  tone?: "bone" | "bone-deep" | "obsidian" | "obsidian-lift";
   className?: string;
   children: React.ReactNode;
 }) {
@@ -241,7 +241,9 @@ export function Section({
 
   const driftA = useTransform(scrollYProgress, [0, 1], [-90, 90]);
   const driftB = useTransform(scrollYProgress, [0, 1], [70, -70]);
-  const dark = tone === "obsidian";
+  /* Two dark surfaces, not one: every obsidian section at the identical
+     shade made them read as one long block. */
+  const dark = tone === "obsidian" || tone === "obsidian-lift";
 
   return (
     <section
@@ -251,7 +253,8 @@ export function Section({
         "relative overflow-hidden px-6 py-20 lg:px-10 lg:py-26",
         tone === "bone" && "bg-bone-100 text-plum-950",
         tone === "bone-deep" && "bg-bone-200 text-plum-950",
-        dark && "bg-obsidian-900 text-white",
+        tone === "obsidian" && "bg-obsidian-900 text-white",
+        tone === "obsidian-lift" && "bg-obsidian-800 text-white",
         className,
       )}
     >
