@@ -247,7 +247,7 @@ export function CinematicHero({ className }: { className?: string }) {
             <Wordmark />
           </div>
           <nav className="hidden items-center gap-1 md:flex">
-            {["Solutions", "Modules", "Industries", "Deployment"].map((item) => (
+            {["Modules", "Industries", "Deployment"].map((item) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase()}`}

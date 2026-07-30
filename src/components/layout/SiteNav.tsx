@@ -5,7 +5,6 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { label: "Solutions", href: "#solutions" },
   { label: "Modules", href: "#modules" },
   { label: "Industries", href: "#industries" },
   { label: "Deployment", href: "#deployment" },
