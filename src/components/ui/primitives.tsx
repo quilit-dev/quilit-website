@@ -148,13 +148,16 @@ export function SectionHeading({
   tone = "light",
   align = "center",
   className,
+  aside,
 }: {
   eyebrow: string;
   title: React.ReactNode;
   lead?: React.ReactNode;
   tone?: "light" | "dark";
-  align?: "center" | "left";
+  align?: "center" | "left" | "split";
   className?: string;
+  /** Rendered opposite the heading in `split` — keeps the eye moving. */
+  aside?: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
@@ -171,18 +174,21 @@ export function SectionHeading({
       ref={ref}
       style={{ y: reduced ? 0 : y, willChange: "transform" }}
       className={cn(
-        "max-w-2xl",
+        align === "split"
+          ? "flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between"
+          : "max-w-2xl",
         align === "center" && "mx-auto text-center",
         className,
       )}
     >
+      <div className={cn(align === "split" && "max-w-xl")}>
       <Reveal>
         <Eyebrow tone={tone}>{eyebrow}</Eyebrow>
       </Reveal>
       <Reveal delay={0.08}>
         <h2
           className={cn(
-            "mt-6 text-balance font-display text-[clamp(1.9rem,3.6vw,3.1rem)] font-bold leading-[1.06] tracking-[-0.032em]",
+            "mt-5 text-balance font-display text-[clamp(1.9rem,3.6vw,3.1rem)] font-bold leading-[1.06] tracking-[-0.032em]",
             tone === "light" ? "text-plum-950" : "text-card-matte",
           )}
         >
@@ -193,7 +199,7 @@ export function SectionHeading({
         <Reveal delay={0.14}>
           <p
             className={cn(
-              "mt-5 text-balance text-[1.04rem] leading-relaxed",
+              "mt-4 text-balance text-[1.04rem] leading-relaxed",
               tone === "light" ? "text-plum-900/60" : "text-plum-200/60",
             )}
           >
@@ -201,6 +207,8 @@ export function SectionHeading({
           </p>
         </Reveal>
       )}
+      </div>
+      {aside && <Reveal delay={0.18} className="shrink-0">{aside}</Reveal>}
     </motion.div>
   );
 }
@@ -240,7 +248,7 @@ export function Section({
       ref={ref}
       id={id}
       className={cn(
-        "relative overflow-hidden px-6 py-24 lg:px-10 lg:py-32",
+        "relative overflow-hidden px-6 py-20 lg:px-10 lg:py-26",
         tone === "bone" && "bg-bone-100 text-plum-950",
         tone === "bone-deep" && "bg-bone-200 text-plum-950",
         dark && "bg-obsidian-900 text-white",
@@ -248,6 +256,23 @@ export function Section({
       )}
     >
       {dark && <div className="film-grain" aria-hidden />}
+
+      {/* Edge bridges: a hard cut from bone to obsidian reads as two separate
+          pages. These soften both boundaries without touching the palette. */}
+      {dark && (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-32"
+            style={{ background: "linear-gradient(to bottom, rgba(249,247,244,0.07), transparent)" }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-32"
+            style={{ background: "linear-gradient(to top, rgba(249,247,244,0.06), transparent)" }}
+          />
+        </>
+      )}
 
       <motion.div
         aria-hidden
@@ -293,7 +318,9 @@ export function Cta({
     <a
       href={href}
       className={cn(
-        "group inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[0.95rem] font-semibold tracking-[-0.01em] transition-transform duration-300 hover:-translate-y-0.5",
+        "group inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[0.95rem] font-semibold tracking-[-0.01em]",
+        "transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0",
+        "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-plum-500",
         variant === "dark" && "btn-tactile-dark",
         variant === "light" && "btn-tactile-light",
         variant === "glass" && "glass-badge text-white",

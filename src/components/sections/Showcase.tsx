@@ -120,6 +120,7 @@ export function Showcase() {
   return (
     <Section id="showcase" tone="bone">
       <SectionHeading
+        align="split"
         eyebrow="Inside the product"
         title={
           <>
@@ -128,10 +129,18 @@ export function Showcase() {
             <span className="font-serif italic text-plum-600">The actual screens.</span>
           </>
         }
-        lead="Every image below is captured from a running instance. Pick a module and look around."
+        lead="Every image is captured from a running instance. Pick a module and look around."
+        aside={
+          <span className="hidden items-center gap-2.5 rounded-full border border-plum-900/10 bg-white px-4 py-2.5 font-mono text-[0.6rem] uppercase tracking-[0.16em] text-plum-900/45 lg:inline-flex">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-jade-400" />
+            Live product · not a render
+          </span>
+        }
       />
 
-      <div className="mt-16 grid gap-8 lg:grid-cols-[19rem_1fr] lg:items-start">
+      {/* Rail narrowed, screen widened: the screenshot is the strongest trust
+          signal on the page and should dominate its section. */}
+      <div className="mt-10 grid gap-7 lg:grid-cols-[16rem_1fr] lg:items-start">
         {/* module rail — min-w-0 is load-bearing. A grid child defaults to
             min-width:auto, so on mobile the single column stretched to this
             rail's min-content width (all six buttons in a row, ~950px) and
@@ -194,7 +203,7 @@ export function Showcase() {
                 ? undefined
                 : { y: frameY, willChange: "transform" }
             }
-            className="overflow-hidden rounded-[26px] border border-plum-900/8 bg-white shadow-[0_2px_4px_rgba(42,29,41,0.04),0_40px_80px_-50px_rgba(42,29,41,0.5)]"
+            className="overflow-hidden rounded-[26px] border border-plum-900/8 bg-white shadow-[0_2px_4px_rgba(42,29,41,0.04),0_48px_90px_-50px_rgba(42,29,41,0.55)] 2xl:-mr-16"
           >
             <div className="relative aspect-[16/10] w-full overflow-hidden bg-obsidian-900">
               <AnimatePresence mode="sync">

@@ -92,12 +92,9 @@ export function IndustriesGrid({ images }: { images: Record<string, string> }) {
   }
 
   return (
-    <div className="mt-16 space-y-5 lg:space-y-6">
+    <div className="mt-12 space-y-5 lg:space-y-6">
       <Row items={ROW_A} images={images} direction={-1} speed={26} />
       <Row items={ROW_B} images={images} direction={1} speed={22} />
-      <p className="pt-2 text-center font-mono text-[0.6rem] uppercase tracking-[0.18em] text-plum-300/35">
-        Drag to explore
-      </p>
     </div>
   );
 }

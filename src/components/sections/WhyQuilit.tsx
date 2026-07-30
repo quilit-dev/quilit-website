@@ -56,7 +56,7 @@ export function WhyQuilit() {
     <section
       ref={ref}
       id="why"
-      className="relative overflow-hidden bg-obsidian-900 px-6 py-28 text-white lg:px-10 lg:py-40"
+      className="relative overflow-hidden bg-obsidian-900 px-6 py-20 text-white lg:px-10 lg:py-26"
     >
       <div className="film-grain" aria-hidden />
 
@@ -98,7 +98,7 @@ export function WhyQuilit() {
         </div>
 
         {/* ---- figures ---- */}
-        <div className="mt-20 grid grid-cols-2 gap-x-6 gap-y-12 lg:mt-28 lg:grid-cols-4">
+        <div className="mt-14 grid grid-cols-2 gap-x-6 gap-y-12 lg:mt-20 lg:grid-cols-4">
           {FIGURES.map((f, i) => (
             <Reveal key={f.label} delay={i * 0.09} className="text-center">
               <div className="font-mono text-[clamp(2.8rem,6vw,4.6rem)] font-bold leading-none tracking-[-0.04em] text-white">
@@ -115,7 +115,7 @@ export function WhyQuilit() {
         {/* ---- pillars: phrases only ---- */}
         {/* Capped width so six pills wrap three-and-three rather than stranding
             a single one on its own line. */}
-        <div className="mx-auto mt-24 flex max-w-3xl flex-wrap justify-center gap-3 lg:mt-32">
+        <div className="mx-auto mt-16 flex max-w-3xl flex-wrap justify-center gap-3 lg:mt-24">
           {PILLARS.map((p, i) => (
             <Reveal key={p.text} delay={i * 0.06}>
               <motion.span

@@ -81,20 +81,21 @@ export function Deployment() {
   return (
     <Section id="deployment" tone="bone-deep">
       <SectionHeading
+        align="split"
         eyebrow="Deployment & licensing"
         title={
           <>
-            Your system,
+            Run it your way.
             <br />
-            <span className="font-serif italic text-plum-600">on your terms.</span>
+            <span className="font-serif italic text-plum-600">Own it outright.</span>
           </>
         }
-        lead="Offline or cloud. Whole platform or a handful of modules. Standard or built for you — which is why we quote rather than publish a price list."
+        lead="Offline or cloud. The whole platform or a handful of modules. Standard, or built for how you actually work."
       />
 
       {/* ---- deployment switch ---- */}
       <Reveal delay={0.1}>
-        <div className="mt-14 flex justify-center">
+        <div className="mt-10 flex justify-center">
           <div className="inline-flex gap-1 rounded-full border border-plum-900/8 bg-white/70 p-1.5">
             {MODES.map((m) => (
               <button
@@ -201,11 +202,11 @@ export function Deployment() {
       <Reveal delay={0.2}>
         <div className="mt-10 flex flex-col items-center gap-5 rounded-[24px] border border-plum-900/8 bg-white px-8 py-10 text-center">
           <h3 className="max-w-xl text-balance font-display text-[1.6rem] font-bold leading-snug tracking-[-0.026em] text-plum-950">
-            Tell us how you work. We will quote what fits.
+Tell us how you work. We will show you what fits.
           </h3>
           <div className="mt-1 flex flex-wrap justify-center gap-3">
             <Cta href="#demo" variant="dark">
-              Request a quote
+              Book a demo
               <ArrowRight />
             </Cta>
             <Cta href="#modules" variant="quiet">

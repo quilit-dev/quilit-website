@@ -475,7 +475,7 @@ export function CinematicHero({ className }: { className?: string }) {
                   <ArrowIcon />
                 </MagneticButton>
                 <MagneticButton href="#deployment" variant="glass">
-                  How it is licensed
+                  See how it deploys
                 </MagneticButton>
               </div>
             </motion.div>

@@ -27,7 +27,7 @@ export function FinalCta() {
     <section
       ref={ref}
       id="demo"
-      className="relative overflow-hidden bg-obsidian-900 px-6 py-28 lg:px-10 lg:py-40"
+      className="relative overflow-hidden bg-obsidian-900 px-6 py-24 lg:px-10 lg:py-32"
     >
       <div className="film-grain" aria-hidden />
 
@@ -81,19 +81,19 @@ export function FinalCta() {
         </Reveal>
 
         <Reveal delay={0.2}>
-          <div className="mt-11 flex flex-wrap items-center justify-center gap-3.5">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-3.5">
             <Cta href="#demo" variant="light">
               Book a live demo
               <ArrowRight />
             </Cta>
             <Cta href="#deployment" variant="glass">
-              Deployment & licensing
+              How deployment works
             </Cta>
           </div>
         </Reveal>
 
         <Reveal delay={0.26}>
-          <ul className="mt-14 flex flex-wrap items-center justify-center gap-x-9 gap-y-4">
+          <ul className="mt-12 flex flex-wrap items-center justify-center gap-x-9 gap-y-4">
             {ASSURANCES.map((a) => (
               <li
                 key={a.text}

@@ -70,6 +70,7 @@ export function Industries() {
       />
 
       <SectionHeading
+        align="split"
         tone="dark"
         eyebrow="Where Quilit is running"
         title={
@@ -81,7 +82,12 @@ export function Industries() {
             </span>
           </>
         }
-        lead="The business type you choose at setup seeds the right attributes, categories and defaults — so the system arrives already speaking your trade."
+        lead="The business type you pick at setup seeds the right attributes, categories and defaults. It arrives already speaking your trade."
+        aside={
+          <span className="hidden items-center gap-2.5 rounded-full border border-white/12 bg-white/5 px-4 py-2.5 font-mono text-[0.6rem] uppercase tracking-[0.16em] text-plum-300/55 lg:inline-flex">
+            Drag the rails to explore
+          </span>
+        }
       />
 
       <IndustriesGrid images={images} />

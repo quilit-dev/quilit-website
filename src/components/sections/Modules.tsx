@@ -85,20 +85,20 @@ export function Modules() {
   return (
     <Section id="modules" tone="bone-deep">
       <SectionHeading
-        eyebrow="Thirty-eight capabilities, one login"
+        eyebrow="What Quilit replaces"
         title={
           <>
-            Every department,
+            Stop stitching together
             <br />
-            <span className="font-serif italic text-plum-600">already connected.</span>
+            <span className="font-serif italic text-plum-600">eight different tools.</span>
           </>
         }
-        lead="License the whole platform or only the modules you need. Anything you did not buy is blocked at its endpoint, not merely hidden."
+        lead="Every department on one login, sharing one set of numbers. License the whole platform or only what you use."
       />
 
       {/* group switcher */}
       <Reveal delay={0.1}>
-        <div className="mt-14 flex flex-wrap justify-center gap-2">
+        <div className="mt-10 flex flex-wrap justify-center gap-2">
           {GROUPS.map((g) => (
             <button
               key={g.key}
@@ -125,7 +125,7 @@ export function Modules() {
       </Reveal>
 
       {/* cards */}
-      <div className="mt-10 min-h-[26rem]">
+      <div className="mt-8 min-h-[26rem]">
         <AnimatePresence mode="wait">
           <motion.div
             key={group.key}

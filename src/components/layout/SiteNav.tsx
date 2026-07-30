@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { label: "Modules", href: "#modules" },
+  { label: "Product", href: "#showcase" },
   { label: "Industries", href: "#industries" },
   { label: "Deployment", href: "#deployment" },
+  { label: "FAQ", href: "#faq" },
 ];
 
 /**
@@ -55,7 +57,7 @@ export function SiteNav() {
                 <a
                   key={l.href}
                   href={l.href}
-                  className="rounded-full px-3.5 py-2 text-[0.88rem] font-medium text-plum-900/60 transition-colors hover:bg-plum-900/5 hover:text-plum-950"
+                  className="rounded-full px-3.5 py-2 text-[0.88rem] font-medium text-plum-900/60 transition-colors hover:bg-plum-900/5 hover:text-plum-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-plum-500"
                 >
                   {l.label}
                 </a>
