@@ -206,24 +206,33 @@ export function Showcase() {
             className="overflow-hidden rounded-[26px] border border-plum-900/8 bg-white shadow-[0_2px_4px_rgba(42,29,41,0.04),0_48px_90px_-50px_rgba(42,29,41,0.55)] 2xl:-mr-16"
           >
             <div className="relative aspect-[16/10] w-full overflow-hidden bg-obsidian-900">
-              <AnimatePresence mode="sync">
+              {/* Every screen is mounted and simply cross-faded.
+                  AnimatePresence unmounted the old frame and faded the new one
+                  in on a timer rather than on load, so any module the browser
+                  had not cached showed the dark container instead — measured at
+                  692ms of black on a throttled connection. Nothing unmounts
+                  now, so a switch cannot go blank. */}
+              {SHOTS.map((sh) => (
                 <motion.div
-                  key={shot.src}
+                  key={sh.src}
                   className="absolute inset-0"
-                  initial={{ opacity: 0, scale: 1.015 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  initial={false}
+                  animate={{ opacity: sh.key === active ? 1 : 0 }}
+                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ willChange: "opacity" }}
+                  aria-hidden={sh.key !== active}
                 >
                   <Image
-                    src={shot.src}
-                    alt={`Quilit ERP — ${shot.label}`}
+                    src={sh.src}
+                    alt={`Quilit ERP — ${sh.label}`}
                     fill
-                    sizes="(max-width: 1024px) 92vw, 860px"
+                    sizes="(max-width: 1024px) 92vw, 900px"
                     className="object-cover object-top"
+                    priority={sh.key === SHOTS[0].key}
                   />
                 </motion.div>
-              </AnimatePresence>
+              ))}
+
               <div className="screen-glare pointer-events-none absolute inset-0" aria-hidden />
             </div>
 

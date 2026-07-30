@@ -9,7 +9,6 @@ import {
   useSpring,
   useMotionValue,
   useReducedMotion,
-  AnimatePresence,
   type MotionValue,
 } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -44,14 +43,6 @@ const TRUST = [
   { value: "431", label: "Automated tests" },
   { value: "EN·AR", label: "Bilingual, RTL" },
 ] as const;
-
-/* Direction-aware screen change. Transform + opacity only, so a slide costs
-   the compositor the same as the crossfade it replaces. */
-const SLIDE = {
-  enter: (d: number) => ({ opacity: 0, x: `${d * 26}%` }),
-  center: { opacity: 1, x: "0%" },
-  exit: (d: number) => ({ opacity: 0, x: `${d * -26}%` }),
-};
 
 /**
  * Scroll ramp with a pinned tail.
@@ -518,11 +509,9 @@ function Monitor({
   /* `dir` drives which way a slide enters/leaves. Auto-advance runs until the
      visitor takes control, then stops for good rather than fighting them. */
   const [i, setI] = useState(0);
-  const [dir, setDir] = useState(1);
   const [manual, setManual] = useState(false);
 
   const go = useCallback((delta: number) => {
-    setDir(delta);
     setI((v) => (v + delta + SCREENS.length) % SCREENS.length);
   }, []);
 
@@ -618,27 +607,33 @@ function Monitor({
             onPointerDown={onPointerDown}
             onPointerUp={onPointerUp}
           >
-            <AnimatePresence mode="sync" custom={dir}>
+            {/* All four screens stay mounted and cross-fade with a small
+                directional slide. Unmounting them meant any screen the browser
+                had not yet fetched left the bezel showing plain black. */}
+            {SCREENS.map((sc, n) => (
               <motion.div
-                key={SCREENS[i].src}
+                key={sc.src}
                 className="absolute inset-0"
-                custom={dir}
-                variants={SLIDE}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.62, ease: [0.16, 1, 0.3, 1] }}
+                initial={false}
+                animate={{
+                  opacity: n === i ? 1 : 0,
+                  x: n === i ? "0%" : n < i ? "-16%" : "16%",
+                }}
+                transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                style={{ willChange: "transform, opacity" }}
+                aria-hidden={n !== i}
               >
                 <Image
-                  src={SCREENS[i].src}
-                  alt={`Quilit ERP — ${SCREENS[i].label}`}
+                  src={sc.src}
+                  alt={`Quilit ERP — ${sc.label}`}
                   fill
-                  sizes="(max-width: 1024px) 90vw, 860px"
+                  sizes="(max-width: 1024px) 90vw, 900px"
                   className="object-cover object-top"
-                  priority={i === 0}
+                  draggable={false}
+                  priority={n === 0}
                 />
               </motion.div>
-            </AnimatePresence>
+            ))}
 
             <div className="screen-glare pointer-events-none absolute inset-0 z-20" aria-hidden />
 
@@ -756,7 +751,6 @@ function Monitor({
               type="button"
               onClick={() => {
                 setManual(true);
-                setDir(n > i ? 1 : -1);
                 setI(n);
               }}
               aria-label={s.label}
