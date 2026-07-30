@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   motion,
   useScroll,
   useTransform,
   useReducedMotion,
+  useMotionValueEvent,
   type MotionValue,
 } from "motion/react";
 import { Eyebrow, Icon, type IconName } from "@/components/ui/primitives";
@@ -106,6 +107,16 @@ export function Workflow() {
      conditional return runs in a different order between renders. */
   const railScale = useTransform(p, [0.06, 0.88], [0, 1]);
 
+  /* Four cards need 1470px; a phone viewport is ~830px, so the desktop grid
+     was cut off top and bottom and the sequence could not be followed.
+     Mobile advances one stage at a time instead — which also reads better,
+     because "watch it travel" is a sequence, not a wall. */
+  const [step, setStep] = useState(0);
+  useMotionValueEvent(p, "change", (v) => {
+    const idx = Math.max(0, Math.min(STAGES.length - 1, Math.floor((v - 0.02) / 0.2)));
+    setStep(idx);
+  });
+
   if (reduced) return <StaticWorkflow />;
 
   return (
@@ -136,8 +147,8 @@ export function Workflow() {
             <Progress p={p} />
           </div>
 
-          {/* ---- the chain ---- */}
-          <div className="relative mt-12 lg:mt-16">
+          {/* ---- the chain: full grid from lg up ---- */}
+          <div className="relative mt-12 hidden lg:mt-16 lg:block">
             {/* rail the stages sit on */}
             <div
               aria-hidden
@@ -152,6 +163,48 @@ export function Workflow() {
             <div className="grid gap-4 lg:grid-cols-4 lg:gap-5">
               {STAGES.map((s, i) => (
                 <StageCard key={s.key} stage={s} index={i} p={p} />
+              ))}
+            </div>
+          </div>
+
+          {/* ---- the chain: one stage at a time on small screens ---- */}
+          <div className="mt-8 lg:hidden">
+            <div className="mb-5 flex items-center gap-2">
+              {STAGES.map((st, n) => (
+                <div
+                  key={st.key}
+                  className={cn(
+                    "h-1 flex-1 rounded-full transition-colors duration-500",
+                    n <= step ? "bg-plum-300" : "bg-white/12",
+                  )}
+                />
+              ))}
+            </div>
+            <div className="mb-4 flex items-baseline justify-between">
+              <span className="font-mono text-[0.58rem] uppercase tracking-[0.16em] text-plum-300/50">
+                Step {step + 1} of {STAGES.length}
+              </span>
+              <span className="font-mono text-[0.58rem] uppercase tracking-[0.16em] text-plum-300/40">
+                {STAGES[step].ref}
+              </span>
+            </div>
+
+            <div className="relative min-h-[262px]">
+              {STAGES.map((st, n) => (
+                <motion.div
+                  key={st.key}
+                  className="absolute inset-x-0 top-0"
+                  initial={false}
+                  animate={{
+                    opacity: n === step ? 1 : 0,
+                    y: n === step ? 0 : n < step ? -16 : 16,
+                  }}
+                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ willChange: "transform, opacity" }}
+                  aria-hidden={n !== step}
+                >
+                  <StageBody stage={st} />
+                </motion.div>
               ))}
             </div>
           </div>
@@ -235,55 +288,63 @@ function StageCard({
         </span>
       </div>
 
-      <motion.div
-        style={{ willChange: "opacity" }}
-        className={cn(
-          "relative overflow-hidden rounded-[20px] border border-white/10 p-5",
-          "bg-gradient-to-b from-white/[0.07] to-white/[0.015]",
-          "shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]",
-        )}
-      >
-        <motion.span
-          aria-hidden
-          style={{ opacity: glow }}
-          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-plum-300/70 to-transparent"
-        />
-
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-plum-300">
-            <Icon name={stage.icon} className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <div className="text-[0.82rem] font-semibold text-white">{stage.label}</div>
-            <div className="truncate font-mono text-[0.6rem] text-plum-300/45">
-              {stage.ref}
-            </div>
-          </div>
-        </div>
-
-        <p className="mt-4 font-display text-[1.05rem] font-bold leading-snug tracking-[-0.02em] text-white">
-          {stage.headline}
-        </p>
-
-        <dl className="mt-4 space-y-2 border-t border-white/8 pt-4">
-          {stage.rows.map(([k, v]) => (
-            <div key={k} className="flex items-baseline justify-between gap-3">
-              <dt className="truncate text-[0.76rem] text-plum-200/55">{k}</dt>
-              <dd className="shrink-0 font-mono text-[0.76rem] font-semibold text-white/90">
-                {v}
-              </dd>
-            </div>
-          ))}
-        </dl>
-
-        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-jade-400/25 bg-jade-400/8 px-2.5 py-1">
-          <span className="h-1 w-1 rounded-full bg-jade-400" />
-          <span className="font-mono text-[0.56rem] uppercase tracking-[0.12em] text-jade-400">
-            {stage.effect}
-          </span>
-        </div>
-      </motion.div>
+      <StageBody stage={stage} glow={glow} />
     </motion.article>
+  );
+}
+
+/** The card itself — shared by the desktop grid and the mobile single stage. */
+function StageBody({
+  stage,
+  glow,
+}: {
+  stage: Stage;
+  glow?: MotionValue<number>;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-[20px] border border-white/10 p-5",
+        "bg-gradient-to-b from-white/[0.07] to-white/[0.015]",
+        "shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]",
+      )}
+    >
+      <motion.span
+        aria-hidden
+        style={glow ? { opacity: glow } : { opacity: 1 }}
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-plum-300/70 to-transparent"
+      />
+
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-plum-300">
+          <Icon name={stage.icon} className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <div className="text-[0.82rem] font-semibold text-white">{stage.label}</div>
+          <div className="truncate font-mono text-[0.6rem] text-plum-300/45">{stage.ref}</div>
+        </div>
+      </div>
+
+      <p className="mt-4 font-display text-[1.05rem] font-bold leading-snug tracking-[-0.02em] text-white">
+        {stage.headline}
+      </p>
+
+      <dl className="mt-4 space-y-2 border-t border-white/8 pt-4">
+        {stage.rows.map(([k, v]) => (
+          <div key={k} className="flex items-baseline justify-between gap-3">
+            <dt className="truncate text-[0.76rem] text-plum-200/55">{k}</dt>
+            <dd className="shrink-0 font-mono text-[0.76rem] font-semibold text-white/90">{v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-jade-400/25 bg-jade-400/8 px-2.5 py-1">
+        <span className="h-1 w-1 rounded-full bg-jade-400" />
+        <span className="font-mono text-[0.56rem] uppercase tracking-[0.12em] text-jade-400">
+          {stage.effect}
+        </span>
+      </div>
+    </div>
   );
 }
 
