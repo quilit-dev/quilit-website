@@ -1,26 +1,336 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================
+   QUILIT ERP — brand foundation
+   Obsidian Plum #6C4D69 · Soft Off-White #F9F7F4
+   ============================================================ */
+
+@theme {
+  /* --- Obsidian Plum ramp ---------------------------------- */
+  --color-plum-50:  #F7F3F6;
+  --color-plum-100: #EDE4EB;
+  --color-plum-200: #DBC9D7;
+  --color-plum-300: #C2A6BC;
+  --color-plum-400: #A37F9C;
+  --color-plum-500: #85607E;
+  --color-plum-600: #6C4D69;  /* brand primary */
+  --color-plum-700: #573E55;
+  --color-plum-800: #3F2C3E;
+  --color-plum-900: #2A1D29;
+  --color-plum-950: #150E15;
+
+  /* --- Obsidian (near-black, plum-tinted) ------------------ */
+  --color-obsidian-700: #241A23;
+  --color-obsidian-800: #171016;
+  --color-obsidian-900: #0E090E;
+  --color-obsidian-950: #070407;
+
+  /* --- Soft Off-White ramp --------------------------------- */
+  --color-bone-50:  #FDFCFB;
+  --color-bone-100: #F9F7F4;  /* brand secondary */
+  --color-bone-200: #F1EDE8;
+  --color-bone-300: #E4DED7;
+  --color-bone-400: #CFC7BE;
+  --color-bone-500: #A79E95;
+
+  /* --- Accents (sparingly, for data semantics) ------------- */
+  --color-gold-400: #D8B26A;
+  --color-jade-400: #4FB98A;
+
+  /* --- Semantic -------------------------------------------- */
+  --color-background: #F9F7F4;
+  --color-foreground: #1A121A;
+  --color-muted: #6E6470;
+
+  /* --- Type ------------------------------------------------- */
+  --font-sans: var(--font-sans-var), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-var), var(--font-sans-var), sans-serif;
+  --font-mono: var(--font-mono-var), ui-monospace, monospace;
+
+  /* --- Motion ----------------------------------------------- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ============================================================
+   Base
+   ============================================================ */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums slashed-zero;
+  overflow-x: clip;
+}
+
+::selection {
+  background: color-mix(in srgb, #6C4D69 24%, transparent);
+}
+
+/* ============================================================
+   Materials — physical depth
+   ============================================================ */
+
+/* Film grain: breaks up flat gradients so they read as lit surfaces.
+   No mix-blend-mode — a full-screen blended layer must be re-composited
+   every frame while anything beneath it moves, which is the single most
+   expensive thing you can put over a scroll-driven scene. Plain alpha over
+   the dark stage is visually equivalent here. */
+.film-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  /* background-size is load-bearing. The SVG declares a viewBox but no
+     intrinsic width, so without this it stretches to the element and Chrome
+     evaluates feTurbulence across the whole section — on the industries
+     section that alone cost ~60fps. Tiling a 180px texture is nearly free. */
+  background-size: 180px 180px;
+  background-repeat: repeat;
+  /* Own layer, so content moving beneath never repaints the grain. */
+  transform: translateZ(0);
+}
+
+.bg-grid {
+  background-size: 68px 68px;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, #2A1D29 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, #2A1D29 6%, transparent) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, black 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, black 0%, transparent 72%);
+}
+
+/* Headline treatments -------------------------------------- */
+.text-emboss {
+  color: var(--color-foreground);
+  text-shadow:
+    0 12px 34px color-mix(in srgb, #2A1D29 16%, transparent),
+    0 2px 3px color-mix(in srgb, #2A1D29 10%, transparent);
+}
+
+.text-plum-matte {
+  background: linear-gradient(175deg, #573E55 0%, #6C4D69 46%, color-mix(in srgb, #6C4D69 62%, transparent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transform: translateZ(0); /* avoids the WebKit gradient-text clipping bug */
+  /* One small shadow, not two large ones: this text is parallaxed, and every
+     drop-shadow filter on a moving element is re-rasterised per frame. */
+  filter: drop-shadow(0 4px 10px color-mix(in srgb, #573E55 22%, transparent));
+}
+
+/* Inside the dark stage: a light ramp on a dark ground. */
+.text-card-matte {
+  background: linear-gradient(180deg, #FFFFFF 0%, #C2A6BC 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transform: translateZ(0);
+  /* See .text-plum-matte — kept to a single cheap shadow for the same reason. */
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+}
+
+/* The obsidian stage --------------------------------------- */
+.card-obsidian {
+  background:
+    radial-gradient(120% 90% at 18% 0%, #3F2C3E 0%, transparent 55%),
+    linear-gradient(150deg, #241A23 0%, #0E090E 62%, #070407 100%);
+  box-shadow:
+    0 48px 120px -24px rgba(10, 5, 10, 0.78),
+    0 24px 48px -24px rgba(10, 5, 10, 0.7),
+    inset 0 1px 2px rgba(255, 255, 255, 0.16),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Cursor-tracked specular sheen.
+   A fixed-size disc that is *translated*, rather than a full-bleed element
+   whose gradient position is rewritten — moving a background repaints the
+   whole surface each mousemove, moving a transform does not. */
+.card-sheen {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1100px;
+  height: 1100px;
+  margin-left: -550px;
+  margin-top: -550px;
+  pointer-events: none;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle closest-side,
+    rgba(206, 178, 200, 0.10) 0%,
+    rgba(206, 178, 200, 0.04) 45%,
+    transparent 70%
+  );
+  will-change: transform;
+}
+
+/* Monitor hardware ----------------------------------------- */
+.monitor-bezel {
+  background: linear-gradient(168deg, #2C2430 0%, #151015 48%, #0A070A 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.9),
+    0 40px 70px -28px rgba(0, 0, 0, 0.9),
+    0 16px 30px -16px rgba(0, 0, 0, 0.75);
+}
+
+.monitor-screen {
+  background: #0B070B;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.9),
+    inset 0 0 26px rgba(0, 0, 0, 0.85);
+}
+
+/* Angled reflection across the glass. */
+.screen-glare {
+  background: linear-gradient(
+    104deg,
+    rgba(255, 255, 255, 0.11) 0%,
+    rgba(255, 255, 255, 0.03) 26%,
+    rgba(255, 255, 255, 0) 48%
+  );
+}
+
+.monitor-stand {
+  background: linear-gradient(180deg, #241C26 0%, #120D13 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Floating glass badges ------------------------------------
+   No backdrop-filter: these sit over a near-flat dark gradient, so the blur
+   buys nothing visually while forcing a backdrop re-sample every frame they
+   move. A layered translucent fill reads the same. */
+.glass-badge {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(28, 20, 27, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 24px 44px -16px rgba(0, 0, 0, 0.8),
+    inset 0 1px 1px rgba(255, 255, 255, 0.22),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.widget-inset {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.012) 100%);
+  box-shadow:
+    0 12px 22px rgba(0, 0, 0, 0.34),
+    inset 0 1px 1px rgba(255, 255, 255, 0.06),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Tactile buttons ------------------------------------------ */
+.btn-tactile-light,
+.btn-tactile-dark {
+  transition: transform 0.35s var(--ease-out-quint), box-shadow 0.35s var(--ease-out-quint),
+    background 0.35s var(--ease-out-quint);
+}
+
+.btn-tactile-light {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F1EDE8 100%);
+  color: #2A1D29;
+  box-shadow:
+    0 0 0 1px rgba(26, 18, 26, 0.06),
+    0 2px 4px rgba(26, 18, 26, 0.1),
+    0 14px 28px -6px rgba(26, 18, 26, 0.26),
+    inset 0 1px 1px #fff,
+    inset 0 -3px 6px rgba(26, 18, 26, 0.06);
+}
+.btn-tactile-light:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 0 1px rgba(26, 18, 26, 0.06),
+    0 8px 14px -2px rgba(26, 18, 26, 0.16),
+    0 24px 38px -8px rgba(26, 18, 26, 0.34),
+    inset 0 1px 1px #fff,
+    inset 0 -3px 6px rgba(26, 18, 26, 0.06);
+}
+.btn-tactile-light:active {
+  transform: translateY(1px);
+  background: linear-gradient(180deg, #F1EDE8 0%, #E4DED7 100%);
+  box-shadow:
+    0 0 0 1px rgba(26, 18, 26, 0.1),
+    inset 0 3px 7px rgba(26, 18, 26, 0.12);
+}
+
+.btn-tactile-dark {
+  background: linear-gradient(180deg, #6C4D69 0%, #3F2C3E 100%);
+  color: #fff;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 2px 4px rgba(10, 5, 10, 0.5),
+    0 14px 28px -6px rgba(42, 29, 41, 0.6),
+    inset 0 1px 1px rgba(255, 255, 255, 0.22),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.42);
+}
+.btn-tactile-dark:hover {
+  transform: translateY(-3px);
+  background: linear-gradient(180deg, #85607E 0%, #573E55 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 8px 14px -2px rgba(10, 5, 10, 0.5),
+    0 26px 40px -8px rgba(42, 29, 41, 0.7),
+    inset 0 1px 1px rgba(255, 255, 255, 0.26),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.42);
+}
+.btn-tactile-dark:active {
+  transform: translateY(1px);
+  background: #3F2C3E;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 3px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Progress ring -------------------------------------------- */
+.progress-ring {
+  transform: rotate(-90deg);
+  transform-origin: center;
+  stroke-linecap: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* ============================================================
+   Industries marquee
+   ============================================================ */
+
+/* Idle float. Kept in CSS rather than JS so each card is a cheap composited
+   animation the main thread never touches — with three copies of the row on
+   screen there can be thirty of these running at once. */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-9px); }
+}
+
+.floaty { animation: none; }
+.floaty-1 { animation-delay: -1.6s; }
+.floaty-2 { animation-delay: -3.2s; }
+.floaty-3 { animation-delay: -4.8s; }
+.floaty-4 { animation-delay: -6.1s; }
+
+/* Fades the rows out into the section edges instead of clipping them dead. */
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floaty { animation: none; }
 }
