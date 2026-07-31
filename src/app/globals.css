@@ -34,8 +34,17 @@
   --color-bone-500: #A79E95;
 
   /* --- Accents (sparingly, for data semantics) ------------- */
+  /* The 400s read well as glows and dots on obsidian. The darker steps exist
+     for the product demo, where the same semantics have to carry as *text*
+     on white and 400 does not clear contrast at small sizes. */
   --color-gold-400: #D8B26A;
+  --color-gold-500: #C0954A;
+  --color-gold-600: #9A7332;
+  --color-gold-700: #74561F;
   --color-jade-400: #4FB98A;
+  --color-jade-500: #2E9C6C;
+  --color-jade-600: #1E7D55;
+  --color-jade-700: #145F40;
 
   /* --- Semantic -------------------------------------------- */
   --color-background: #F9F7F4;

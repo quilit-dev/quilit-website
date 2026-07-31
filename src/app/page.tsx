@@ -5,7 +5,7 @@ import { TrustBar } from "@/components/sections/TrustBar";
 import { Modules } from "@/components/sections/Modules";
 import { Workflow } from "@/components/sections/Workflow";
 import { WhyQuilit } from "@/components/sections/WhyQuilit";
-import { Showcase } from "@/components/sections/Showcase";
+import { ProductDemo } from "@/components/sections/ProductDemo";
 import { Industries } from "@/components/sections/Industries";
 import { Deployment } from "@/components/sections/Deployment";
 import { Faq } from "@/components/sections/Faq";
@@ -25,7 +25,7 @@ export default function Home() {
         <Modules />
         <Workflow />
         <WhyQuilit />
-        <Showcase />
+        <ProductDemo />
         <Industries />
         <Deployment />
         <Faq />
