@@ -4,6 +4,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Icon } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
+import { Listbox } from "@/components/ui/Listbox";
 import {
   DEPLOYMENTS,
   SIZES,
@@ -389,20 +390,23 @@ function Select({
 }) {
   return (
     <div className="min-w-0">
-      <Label htmlFor={id}>{label}</Label>
-      <select
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(FIELD, "cursor-pointer border-white/12", !value && "text-plum-300/40")}
+      {/* The label is not a <label> here: it points at a button, which labels
+          itself from its own content, so aria-labelledby is the correct link
+          and a `for` would be ignored. */}
+      <span
+        id={`${id}-label`}
+        className="mb-1.5 flex items-baseline gap-2 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-plum-300/80"
       >
-        <option value="">{placeholder}</option>
-        {options.map((o) => (
-          <option key={o} value={o} className="bg-obsidian-900 text-white">
-            {o}
-          </option>
-        ))}
-      </select>
+        {label}
+      </span>
+      <Listbox
+        id={id}
+        labelledBy={`${id}-label`}
+        value={value}
+        onChange={onChange}
+        options={options}
+        placeholder={placeholder}
+      />
     </div>
   );
 }
