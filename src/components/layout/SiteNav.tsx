@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
 import { cn } from "@/lib/utils";
 import { LINKS } from "./nav-links";
+import { Wordmark } from "./Mark";
 
 /**
  * Appears only once the hero's pinned runway is behind you — the hero carries
@@ -36,13 +37,8 @@ export function SiteNav() {
           className="fixed inset-x-0 top-0 z-50 px-4 pt-4"
         >
           <nav className="mx-auto flex max-w-[76rem] items-center gap-4 rounded-full border border-plum-900/8 bg-bone-50/95 px-4 py-2.5 shadow-[0_16px_40px_-18px_rgba(42,29,41,0.28)] backdrop-blur-xl">
-            <a href="#top" className="flex shrink-0 items-center gap-2.5" aria-label="Quilit ERP, back to top">
-              <span className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-gradient-to-br from-plum-500 to-plum-800 text-[0.72rem] font-bold text-white shadow-[0_5px_14px_-4px_rgba(42,29,41,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)]">
-                Q
-              </span>
-              <span className="font-display text-[1rem] font-bold tracking-[-0.03em] text-plum-950">
-                Quilit
-              </span>
+            <a href="#top" className="shrink-0" aria-label="Quilit ERP, back to top">
+              <Wordmark size={30} />
             </a>
 
             <div className="mx-auto hidden items-center gap-0.5 md:flex">

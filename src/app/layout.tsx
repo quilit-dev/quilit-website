@@ -39,6 +39,9 @@ export const metadata: Metadata = {
   title: "Quilit ERP — Everything your business runs on, in one system",
   description:
     "Quilit ERP connects quotations, POS, inventory, manufacturing, double-entry accounting, HR and payroll into one platform — offline on your own hardware or hosted in the cloud. Licensed per module, customisable to your operation.",
+  /* icon.png, apple-icon.png and favicon.ico in this directory are picked up
+     by the App Router's file conventions; the manifest is declared here. */
+  manifest: "/site.webmanifest",
   openGraph: {
     title: "Quilit ERP — Everything your business runs on",
     description:

@@ -15,6 +15,7 @@ import {
 } from "motion/react";
 import { cn } from "@/lib/utils";
 import { LINKS } from "@/components/layout/nav-links";
+import { Wordmark } from "@/components/layout/Mark";
 
 /* ============================================================================
    Scroll choreography map  (p = scroll progress through the pinned runway)
@@ -271,7 +272,7 @@ export function CinematicHero({ className }: { className?: string }) {
           style={{ opacity: navOpacity, pointerEvents: navHits }}
         >
           <div className="flex items-center gap-3">
-            <Wordmark />
+            <Wordmark size={34} />
           </div>
           <nav className="hidden items-center gap-1 md:flex">
             {LINKS.map((l) => (
@@ -1037,18 +1038,6 @@ function ArrowIcon() {
   );
 }
 
-function Wordmark() {
-  return (
-    <span className="flex items-center gap-2.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-br from-plum-500 to-plum-800 text-[0.78rem] font-bold text-white shadow-[0_6px_16px_-4px_rgba(42,29,41,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)]">
-        Q
-      </span>
-      <span className="font-display text-[1.05rem] font-bold tracking-[-0.03em] text-plum-900">
-        Quilit
-      </span>
-    </span>
-  );
-}
 
 function ScrollCue() {
   return (

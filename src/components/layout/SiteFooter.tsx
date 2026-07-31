@@ -1,4 +1,5 @@
 import React from "react";
+import { Wordmark } from "./Mark";
 import { Icon } from "@/components/ui/primitives";
 
 /* ============================================================================
@@ -72,14 +73,7 @@ export function SiteFooter() {
         {/* ---- closing prompt: the primary action, one last time ---- */}
         <div className="flex flex-col gap-6 border-b border-white/8 pb-12 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-br from-plum-500 to-plum-800 text-[0.78rem] font-bold text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
-                Q
-              </span>
-              <span className="font-display text-[1.05rem] font-bold tracking-[-0.03em] text-white">
-                Quilit
-              </span>
-            </div>
+            <Wordmark size={34} tone="white" />
             <p className="mt-5 max-w-sm text-[1.05rem] leading-snug text-white/85">
               One system for sales, stock, production, accounting and people.
             </p>

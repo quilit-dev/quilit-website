@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Icon } from "@/components/ui/primitives";
+import { Mark } from "@/components/layout/Mark";
 import { cn } from "@/lib/utils";
 import { NAV, PAGE, TABS, type ModuleKey } from "./data";
 import { useErp } from "./store";
@@ -77,11 +78,13 @@ export function ErpDemo() {
         <aside className="shrink-0 border-b border-[var(--rule)] bg-[var(--surface)] lg:w-[236px] lg:border-b-0 lg:border-r">
           {/* logo block: 60px, surface-2, hairline bottom rule */}
           <div className="flex h-[60px] items-center gap-2.5 border-b border-[var(--rule)] bg-[var(--surface-2)] px-3.5">
+            {/* The design system calls for a plum-filled monogram block; that
+                block now carries the real mark instead of the letters "QE". */}
             <span
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] text-[11px] font-bold text-white"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px]"
               style={{ background: "var(--accent)" }}
             >
-              QE
+              <Mark size={20} tone="white" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[14px] font-bold leading-tight tracking-[-0.02em] text-[var(--ink)]">
