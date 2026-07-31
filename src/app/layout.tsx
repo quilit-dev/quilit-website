@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Instrument_Sans, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { CleanHashLinks } from "@/components/layout/CleanHashLinks";
 
 /* Instrument Sans carries the whole UI — confident, tight, modern grotesque.
    Instrument Serif appears only as italic accent words inside headlines.
@@ -54,7 +55,10 @@ export default function RootLayout({
       lang="en"
       className={`${sans.variable} ${serif.variable} ${mono.variable} ${erpSans.variable} antialiased`}
     >
-      <body>{children}</body>
+      <body>
+        <CleanHashLinks />
+        {children}
+      </body>
     </html>
   );
 }

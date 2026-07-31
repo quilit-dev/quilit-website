@@ -3,15 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
 import { cn } from "@/lib/utils";
-
-const LINKS = [
-  { label: "Modules", href: "#modules" },
-  { label: "How it works", href: "#workflow" },
-  { label: "Product", href: "#showcase" },
-  { label: "Industries", href: "#industries" },
-  { label: "Deployment", href: "#deployment" },
-  { label: "FAQ", href: "#faq" },
-];
+import { LINKS } from "./nav-links";
 
 /**
  * Appears only once the hero's pinned runway is behind you — the hero carries

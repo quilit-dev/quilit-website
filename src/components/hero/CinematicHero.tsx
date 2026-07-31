@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   motion,
+  AnimatePresence,
   useScroll,
   useTransform,
   useSpring,
@@ -13,6 +14,7 @@ import {
   type MotionValue,
 } from "motion/react";
 import { cn } from "@/lib/utils";
+import { LINKS } from "@/components/layout/nav-links";
 
 /* ============================================================================
    Scroll choreography map  (p = scroll progress through the pinned runway)
@@ -96,6 +98,7 @@ export function CinematicHero({ className }: { className?: string }) {
   const runwayRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
+  const [menu, setMenu] = useState(false);
 
   const { scrollYProgress: p } = useScroll({
     target: runwayRef,
@@ -222,6 +225,9 @@ export function CinematicHero({ className }: { className?: string }) {
 
   /* ---- nav fades as the stage takes over ---------------------------------- */
   const navOpacity = useRamp(p, [0, 0.06], [1, 0]);
+  /* A faded layer still swallows clicks, and this one is a full-width band
+     across the top of the stage. Hit testing has to follow visibility. */
+  const navHits = useTransform(navOpacity, (v) => (v > 0.5 ? "auto" : "none"));
 
   /* Reduced motion: skip the cinema, present the composition at rest. */
   if (reduced) {
@@ -255,32 +261,72 @@ export function CinematicHero({ className }: { className?: string }) {
         />
 
         {/* ── nav ──────────────────────────────────────────────────────── */}
+        {/* The floating SiteNav only arrives once this runway is behind you, so
+            for the whole first screen this *is* the navigation — which is why
+            it needs its own menu button on phones, where the inline links are
+            hidden. Without it the first screen had no way into the site at all. */}
         <motion.div
           role="banner"
           className="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-6 py-6 lg:px-12"
-          style={{ opacity: navOpacity }}
+          style={{ opacity: navOpacity, pointerEvents: navHits }}
         >
           <div className="flex items-center gap-3">
             <Wordmark />
           </div>
           <nav className="hidden items-center gap-1 md:flex">
-            {["Modules", "Industries", "Deployment"].map((item) => (
+            {LINKS.map((l) => (
               <a
-                key={item}
-                href={`#${item.toLowerCase()}`}
+                key={l.href}
+                href={l.href}
                 className="rounded-full px-4 py-2 text-[0.9rem] font-medium text-plum-900/65 transition-colors hover:bg-plum-900/5 hover:text-plum-900"
               >
-                {item}
+                {l.label}
               </a>
             ))}
           </nav>
-          <a
-            href="#demo"
-            className="btn-tactile-dark rounded-full px-5 py-2.5 text-[0.88rem] font-semibold"
-          >
-            Book a demo
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href="#demo"
+              className="btn-tactile-dark rounded-full px-5 py-2.5 text-[0.88rem] font-semibold"
+            >
+              Book a demo
+            </a>
+            <button
+              type="button"
+              onClick={() => setMenu((v) => !v)}
+              aria-label={menu ? "Close menu" : "Open menu"}
+              aria-expanded={menu}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-plum-900/12 bg-white/70 text-plum-900/70 backdrop-blur-sm transition-colors hover:bg-plum-900/5 md:hidden"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" className="h-4 w-4" aria-hidden>
+                {menu ? <path d="M18 6 6 18M6 6l12 12" /> : <path d="M3 6h18M3 12h18M3 18h18" />}
+              </svg>
+            </button>
+          </div>
         </motion.div>
+
+        <AnimatePresence>
+          {menu && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-x-4 top-[4.6rem] z-40 overflow-hidden rounded-3xl border border-plum-900/8 bg-bone-50/98 p-2 shadow-[0_20px_50px_-20px_rgba(42,29,41,0.3)] backdrop-blur-xl md:hidden"
+            >
+              {LINKS.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setMenu(false)}
+                  className="block rounded-2xl px-4 py-3 text-[0.95rem] font-medium text-plum-900/75 transition-colors hover:bg-plum-900/5 hover:text-plum-950"
+                >
+                  {l.label}
+                </a>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── act I: the headline ──────────────────────────────────────── */}
         <motion.div
