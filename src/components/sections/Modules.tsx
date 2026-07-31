@@ -160,18 +160,23 @@ export function Modules() {
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-plum-900/8 bg-gradient-to-b from-plum-100 to-plum-50 text-plum-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-plum-600/25 group-hover:from-plum-600 group-hover:to-plum-800 group-hover:text-white group-hover:shadow-[0_10px_20px_-8px_rgba(42,29,41,0.55)]">
                     <Icon name={m.icon} className="h-[18px] w-[18px]" />
                   </span>
+                  {/* The module name leads. It was previously a 0.56rem mono
+                      label at 35% opacity above the outcome sentence, which
+                      made the one word a visitor is actually scanning for the
+                      least legible thing on the card. The outcome still earns
+                      its place, but as supporting text. */}
                   <div className="min-w-0">
-                    <div className="mb-1.5 font-mono text-[0.56rem] uppercase tracking-[0.14em] text-plum-900/35">
+                    <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1.5 font-display text-[1.22rem] font-bold leading-tight tracking-[-0.024em] text-plum-950">
                       {m.name}
-                    </div>
-                    <h3 className="flex flex-wrap items-center gap-2 font-display text-[1rem] font-bold leading-snug tracking-[-0.018em] text-plum-950">
-                      {m.desc}
                       {m.soon && (
                         <span className="rounded-full border border-plum-600/20 bg-plum-600/8 px-2 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.12em] text-plum-600">
                           Coming soon
                         </span>
                       )}
                     </h3>
+                    <p className="mt-1.5 text-[0.9rem] leading-snug text-plum-900/55">
+                      {m.desc}
+                    </p>
                   </div>
                 </div>
               </motion.article>
