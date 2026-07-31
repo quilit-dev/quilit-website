@@ -20,15 +20,15 @@ import {
   Bar,
   Btn,
   Card,
+  DataView,
   Empty,
   FilterBar,
   Input,
   Money,
   Select,
-  SortableTh,
   Stat,
   TableWrap,
-  useSort,
+  type Col,
 } from "./ui";
 
 /* ============================================================================
@@ -203,7 +203,6 @@ function Crm({ s, act }: PaneProps) {
    Quotations — columns from pages/Quotations.jsx
    ========================================================================== */
 
-type QKey = "ref" | "client" | "project" | "status" | "total" | "date";
 
 function Quotations({ s, act }: PaneProps) {
   const [q, setQ] = useState("");
@@ -219,18 +218,30 @@ function Quotations({ s, act }: PaneProps) {
       ),
     [s.quotes, q, status],
   );
-  const { sorted, sort, dir, onSort } = useSort<(typeof rows)[number], QKey>(
-    rows,
-    "ref",
-    (r, k) => (k === "total" ? r.total : (r[k] ?? "")),
-  );
+
+  const cols: Col<(typeof rows)[number]>[] = [
+    { key: "ref", label: "Quote #", role: "title", sort: (r) => r.ref, cell: (r) => <span className="primary mono">{r.ref}</span> },
+    { key: "client", label: "Client", sort: (r) => r.client, cell: (r) => r.client },
+    { key: "project", label: "Project", sort: (r) => r.project ?? "", cell: (r) => r.project ?? "—" },
+    { key: "status", label: "Status", role: "badge", sort: (r) => r.status, cell: (r) => <Badge status={r.status} /> },
+    { key: "total", label: "Total (incl. VAT)", num: true, sort: (r) => r.total, cell: (r) => <Money value={r.total} currency={s.currency} /> },
+    {
+      key: "invoice",
+      label: "Invoice",
+      cell: (r) =>
+        r.invoice ? <span className="mono text-[11.5px] text-[var(--accent)]">→ {r.invoice}</span> : "—",
+    },
+    { key: "date", label: "Created", cardHide: true, sort: (r) => r.date, cell: (r) => <span className="text-[var(--text-3)]">{r.date}</span> },
+  ];
 
   return (
     <Card
       title="Quotations"
       actions={
         <>
-          <span className="text-[11.5px] text-[var(--text-3)]">{s.quotes.length} total quotations</span>
+          <span className="hidden text-[11.5px] text-[var(--text-3)] sm:inline">
+            {s.quotes.length} total quotations
+          </span>
           <Btn variant="primary">+ New Quotation</Btn>
         </>
       }
@@ -248,52 +259,22 @@ function Quotations({ s, act }: PaneProps) {
         />
       </FilterBar>
 
-      {!sorted.length ? (
-        <Empty>No quotations found.</Empty>
-      ) : (
-        <TableWrap min="50rem">
-          <thead>
-            <tr>
-              <SortableTh label="Quote #" sortKey="ref" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Client" sortKey="client" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Project" sortKey="project" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Status" sortKey="status" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Total (incl. VAT)" sortKey="total" sort={sort} dir={dir} onSort={onSort} right />
-              <th>Invoice</th>
-              <SortableTh label="Created" sortKey="date" sort={sort} dir={dir} onSort={onSort} />
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((x) => (
-              <tr key={x.ref}>
-                <td className="primary mono">{x.ref}</td>
-                <td>{x.client}</td>
-                <td>{x.project ?? "—"}</td>
-                <td>
-                  <Badge status={x.status} />
-                </td>
-                <td className="num">
-                  <Money value={x.total} currency={s.currency} />
-                </td>
-                <td className="mono text-[11.5px]">
-                  {x.invoice ? <span className="text-[var(--accent)]">→ {x.invoice}</span> : "—"}
-                </td>
-                <td className="text-[var(--text-3)]">{x.date}</td>
-                <td>
-                  {x.status === "Invoiced" ? (
-                    <span className="text-[11.5px] text-[var(--text-3)]">Invoiced</span>
-                  ) : (
-                    <Btn variant="primary" onClick={() => act({ type: "convertQuote", ref: x.ref })}>
-                      Convert to Invoice
-                    </Btn>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </TableWrap>
-      )}
+      <DataView
+        rows={rows}
+        cols={cols}
+        rowKey={(r) => r.ref}
+        min="50rem"
+        empty="No quotations found."
+        action={(r) =>
+          r.status === "Invoiced" ? (
+            <span className="text-[11.5px] text-[var(--text-3)]">Invoiced</span>
+          ) : (
+            <Btn variant="primary" onClick={() => act({ type: "convertQuote", ref: r.ref })}>
+              Convert to Invoice
+            </Btn>
+          )
+        }
+      />
       <div className="border-t border-[var(--rule)] bg-[var(--surface-2)] px-3.5 py-2 text-[11.5px] text-[var(--text-3)]">
         Workflow: Draft → Sent → Accepted → Convert to Invoice.
       </div>
@@ -305,7 +286,6 @@ function Quotations({ s, act }: PaneProps) {
    Invoices — columns from pages/Invoices.jsx
    ========================================================================== */
 
-type IKey = "ref" | "quote" | "client" | "project" | "total" | "paid" | "remaining" | "status" | "due";
 
 function Invoices({ s, act }: PaneProps) {
   const [q, setQ] = useState("");
@@ -323,16 +303,42 @@ function Invoices({ s, act }: PaneProps) {
       ),
     [s.invoices, q, status],
   );
-  const { sorted, sort, dir, onSort } = useSort<(typeof rows)[number], IKey>(rows, "ref", (r, k) =>
-    k === "remaining" ? r.total - r.paid : k === "total" || k === "paid" ? r[k] : (r[k as "ref"] ?? ""),
-  );
+
+  const cols: Col<(typeof rows)[number]>[] = [
+    { key: "ref", label: "Invoice #", role: "title", sort: (r) => r.ref, cell: (r) => <span className="primary mono">{r.ref}</span> },
+    { key: "quote", label: "Quote #", sort: (r) => r.quote ?? "", cell: (r) => <span className="mono text-[11.5px] text-[var(--text-3)]">{r.quote ?? "—"}</span> },
+    { key: "client", label: "Client", sort: (r) => r.client, cell: (r) => r.client },
+    { key: "project", label: "Project", cardHide: true, sort: (r) => r.project ?? "", cell: (r) => r.project ?? "—" },
+    { key: "total", label: "Amount", num: true, sort: (r) => r.total, cell: (r) => <Money value={r.total} currency={s.currency} className="font-semibold text-[var(--ink)]" /> },
+    { key: "paid", label: "Paid", num: true, cardHide: true, sort: (r) => r.paid, cell: (r) => <Money value={r.paid} currency={s.currency} className="text-[var(--affirm)]" /> },
+    {
+      key: "remaining",
+      label: "Remaining",
+      num: true,
+      sort: (r) => r.total - r.paid,
+      cell: (r) => {
+        const rem = round2(r.total - r.paid);
+        return (
+          <Money
+            value={rem}
+            currency={s.currency}
+            className={cn("font-semibold", rem > 0 ? "text-[var(--negate)]" : "text-[var(--affirm)]")}
+          />
+        );
+      },
+    },
+    { key: "status", label: "Status", role: "badge", sort: (r) => r.status, cell: (r) => <Badge status={r.status} /> },
+    { key: "due", label: "Due Date", sort: (r) => r.due, cell: (r) => <span className="text-[var(--text-3)]">{r.due}</span> },
+  ];
 
   return (
     <Card
       title="Invoices"
       actions={
         <>
-          <span className="text-[11.5px] text-[var(--text-3)]">{s.invoices.length} total invoices</span>
+          <span className="hidden text-[11.5px] text-[var(--text-3)] sm:inline">
+            {s.invoices.length} total invoices
+          </span>
           <Btn variant="primary">+ New Invoice</Btn>
         </>
       }
@@ -350,64 +356,22 @@ function Invoices({ s, act }: PaneProps) {
         />
       </FilterBar>
 
-      {!sorted.length ? (
-        <Empty>No invoices found.</Empty>
-      ) : (
-        <TableWrap min="56rem">
-          <thead>
-            <tr>
-              <SortableTh label="Invoice #" sortKey="ref" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Quote #" sortKey="quote" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Client" sortKey="client" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Project" sortKey="project" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Amount" sortKey="total" sort={sort} dir={dir} onSort={onSort} right />
-              <SortableTh label="Paid" sortKey="paid" sort={sort} dir={dir} onSort={onSort} right />
-              <SortableTh label="Remaining" sortKey="remaining" sort={sort} dir={dir} onSort={onSort} right />
-              <SortableTh label="Status" sortKey="status" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Due Date" sortKey="due" sort={sort} dir={dir} onSort={onSort} />
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((inv) => {
-              const remaining = round2(inv.total - inv.paid);
-              return (
-                <tr key={inv.ref}>
-                  <td className="primary mono">{inv.ref}</td>
-                  <td className="mono text-[11.5px] text-[var(--text-3)]">{inv.quote ?? "—"}</td>
-                  <td>{inv.client}</td>
-                  <td>{inv.project ?? "—"}</td>
-                  <td className="num font-semibold text-[var(--ink)]">
-                    <Money value={inv.total} currency={s.currency} />
-                  </td>
-                  <td className="num" style={{ color: "var(--affirm)" }}>
-                    <Money value={inv.paid} currency={s.currency} />
-                  </td>
-                  <td
-                    className="num font-semibold"
-                    style={{ color: remaining > 0 ? "var(--negate)" : "var(--affirm)" }}
-                  >
-                    <Money value={remaining} currency={s.currency} />
-                  </td>
-                  <td>
-                    <Badge status={inv.status} />
-                  </td>
-                  <td className="text-[var(--text-3)]">{inv.due}</td>
-                  <td>
-                    {inv.status === "Unpaid" ? (
-                      <Btn variant="success" onClick={() => act({ type: "recordPayment", ref: inv.ref })}>
-                        Record Payment
-                      </Btn>
-                    ) : (
-                      <span className="text-[11.5px] text-[var(--text-3)]">—</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </TableWrap>
-      )}
+      <DataView
+        rows={rows}
+        cols={cols}
+        rowKey={(r) => r.ref}
+        min="56rem"
+        empty="No invoices found."
+        action={(r) =>
+          r.status === "Unpaid" ? (
+            <Btn variant="success" onClick={() => act({ type: "recordPayment", ref: r.ref })}>
+              Record Payment
+            </Btn>
+          ) : (
+            <span className="text-[11.5px] text-[var(--text-3)]">—</span>
+          )
+        }
+      />
     </Card>
   );
 }
@@ -588,7 +552,6 @@ function Line({ label, value, currency }: { label: string; value: number; curren
    Inventory — columns from pages/Inventory.jsx
    ========================================================================== */
 
-type NKey = "name" | "category" | "type" | "stock" | "reorder" | "cost" | "supplier";
 
 function Inventory({ s }: PaneProps) {
   const [q, setQ] = useState("");
@@ -602,16 +565,39 @@ function Inventory({ s }: PaneProps) {
       ),
     [s.products, q, cat],
   );
-  const { sorted, sort, dir, onSort } = useSort<(typeof rows)[number], NKey>(rows, "name", (r, k) => r[k]);
-  const total = round2(sorted.reduce((t, p) => t + p.cost * p.stock, 0));
+  const total = round2(rows.reduce((t, p) => t + p.cost * p.stock, 0));
   const cats = [...new Set(s.products.map((p) => p.category))];
+  const statusOf = (p: (typeof rows)[number]) =>
+    p.stock === 0 ? "Void" : p.stock <= p.reorder ? "Low" : "OK";
+
+  const cols: Col<(typeof rows)[number]>[] = [
+    { key: "name", label: "Item Name", role: "title", sort: (r) => r.name, cell: (r) => <span className="primary">{r.name}</span> },
+    { key: "category", label: "Category", sort: (r) => r.category, cell: (r) => <span className="text-[var(--text-3)]">{r.category}</span> },
+    { key: "type", label: "Type", cardHide: true, sort: (r) => r.type, cell: (r) => <span className="text-[var(--text-3)]">{r.type}</span> },
+    { key: "stock", label: "Stock", num: true, sort: (r) => r.stock, cell: (r) => <span className="mono font-semibold text-[var(--ink)]">{r.stock}</span> },
+    { key: "reorder", label: "Min Stock", num: true, sort: (r) => r.reorder, cell: (r) => <span className="mono text-[var(--text-3)]">{r.reorder}</span> },
+    { key: "cost", label: "Unit Cost", num: true, sort: (r) => r.cost, cell: (r) => <Money value={r.cost} currency={s.currency} /> },
+    { key: "value", label: "Total Value", num: true, cell: (r) => <Money value={round2(r.cost * r.stock)} currency={s.currency} /> },
+    { key: "supplier", label: "Supplier", cardHide: true, sort: (r) => r.supplier, cell: (r) => <span className="text-[var(--text-3)]">{r.supplier}</span> },
+    {
+      key: "status",
+      label: "Status",
+      role: "badge",
+      cell: (r) => {
+        const st = statusOf(r);
+        return <Badge status={st}>{st === "Void" ? "Out of stock" : st}</Badge>;
+      },
+    },
+  ];
 
   return (
     <Card
       title="Inventory"
       actions={
         <>
-          <span className="text-[11.5px] text-[var(--text-3)]">{s.products.length} items</span>
+          <span className="hidden text-[11.5px] text-[var(--text-3)] sm:inline">
+            {s.products.length} items
+          </span>
           <Btn variant="primary">+ Add Item</Btn>
         </>
       }
@@ -626,60 +612,23 @@ function Inventory({ s }: PaneProps) {
         />
       </FilterBar>
 
-      {!sorted.length ? (
-        <Empty>No items match your filters.</Empty>
-      ) : (
-        <TableWrap min="52rem">
-          <thead>
-            <tr>
-              <SortableTh label="Item Name" sortKey="name" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Category" sortKey="category" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Type" sortKey="type" sort={sort} dir={dir} onSort={onSort} />
-              <SortableTh label="Stock" sortKey="stock" sort={sort} dir={dir} onSort={onSort} right />
-              <SortableTh label="Min Stock" sortKey="reorder" sort={sort} dir={dir} onSort={onSort} right />
-              <SortableTh label="Unit Cost" sortKey="cost" sort={sort} dir={dir} onSort={onSort} right />
-              <th className="text-right">Total Value</th>
-              <SortableTh label="Supplier" sortKey="supplier" sort={sort} dir={dir} onSort={onSort} />
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((p) => {
-              const status = p.stock === 0 ? "Void" : p.stock <= p.reorder ? "Low" : "OK";
-              return (
-                <tr key={p.sku}>
-                  <td className="primary">{p.name}</td>
-                  <td className="text-[var(--text-3)]">{p.category}</td>
-                  <td className="text-[var(--text-3)]">{p.type}</td>
-                  <td className="num font-semibold text-[var(--ink)]">{p.stock}</td>
-                  <td className="num text-[var(--text-3)]">{p.reorder}</td>
-                  <td className="num">
-                    <Money value={p.cost} currency={s.currency} />
-                  </td>
-                  <td className="num">
-                    <Money value={round2(p.cost * p.stock)} currency={s.currency} />
-                  </td>
-                  <td className="text-[var(--text-3)]">{p.supplier}</td>
-                  <td>
-                    <Badge status={status}>{status === "Void" ? "Out of stock" : status}</Badge>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={6} className="text-right">
-                Stock value
-              </td>
-              <td className="num">
-                <Money value={total} currency={s.currency} />
-              </td>
-              <td colSpan={2} />
-            </tr>
-          </tfoot>
-        </TableWrap>
-      )}
+      <DataView
+        rows={rows}
+        cols={cols}
+        rowKey={(r) => r.sku}
+        min="52rem"
+        empty="No items match your filters."
+        footer={
+          <span className="flex items-center justify-between">
+            <span>Stock value</span>
+            <Money value={total} currency={s.currency} />
+          </span>
+        }
+      />
+      <div className="hidden border-t-2 border-[var(--rule-strong)] bg-[var(--surface-2)] px-3.5 py-2 text-[12.5px] font-bold sm:flex sm:items-center sm:justify-between">
+        <span>Stock value</span>
+        <Money value={total} currency={s.currency} />
+      </div>
     </Card>
   );
 }
@@ -702,7 +651,7 @@ function Manufacturing({ s, tab }: PaneProps) {
               <span className="text-[11.5px] text-[var(--text-3)]">Batch yield 120 units</span>
             </span>
           </div>
-          <TableWrap min="30rem">
+          <TableWrap min="0" wrap>
             <thead>
               <tr>
                 <th>Component</th>
@@ -742,40 +691,30 @@ function Manufacturing({ s, tab }: PaneProps) {
 
   return (
     <Card title="Production Orders" actions={<Btn variant="primary">+ New Production Order</Btn>}>
-      <TableWrap min="48rem">
-        <thead>
-          <tr>
-            <th>Order #</th>
-            <th>Product</th>
-            <th className="text-right">Qty</th>
-            <th>Priority</th>
-            <th>Due Date</th>
-            <th>Progress</th>
-            <th>Status</th>
-            <th className="text-right">Total Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ORDERS.map((o) => (
-            <tr key={o.ref}>
-              <td className="primary mono">{o.ref}</td>
-              <td>{o.product}</td>
-              <td className="num">{o.qty}</td>
-              <td className="text-[var(--text-3)]">{o.priority}</td>
-              <td className="text-[var(--text-3)]">{o.due}</td>
-              <td className="w-24">
+      <DataView
+        rows={[...ORDERS]}
+        cols={[
+          { key: "ref", label: "Order #", role: "title", sort: (o) => o.ref, cell: (o) => <span className="primary mono">{o.ref}</span> },
+          { key: "product", label: "Product", sort: (o) => o.product, cell: (o) => o.product },
+          { key: "qty", label: "Qty", num: true, sort: (o) => o.qty, cell: (o) => <span className="mono">{o.qty}</span> },
+          { key: "priority", label: "Priority", cardHide: true, cell: (o) => <span className="text-[var(--text-3)]">{o.priority}</span> },
+          { key: "due", label: "Due Date", cell: (o) => <span className="text-[var(--text-3)]">{o.due}</span> },
+          {
+            key: "progress",
+            label: "Progress",
+            cell: (o) => (
+              <span className="block w-24">
                 <Bar pct={o.pct} tone={o.state === "On Hold" ? "caution" : o.state === "Completed" ? "affirm" : "accent"} />
-              </td>
-              <td>
-                <Badge status={o.state} />
-              </td>
-              <td className="num">
-                <Money value={o.cost} currency={s.currency} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </TableWrap>
+              </span>
+            ),
+          },
+          { key: "state", label: "Status", role: "badge", cell: (o) => <Badge status={o.state} /> },
+          { key: "cost", label: "Total Cost", num: true, sort: (o) => o.cost, cell: (o) => <Money value={o.cost} currency={s.currency} /> },
+        ]}
+        rowKey={(o) => o.ref}
+        min="48rem"
+        empty="No production orders."
+      />
     </Card>
   );
 }
@@ -795,7 +734,7 @@ function Accounting({ s, tab }: PaneProps) {
        filtered rows, exactly as accounting/TrialBalance.jsx does. */
     return (
       <Card title="Trial Balance" actions={<span className="text-[11.5px] text-[var(--text-3)]">As of Jul 31, 2026</span>}>
-        <TableWrap min="34rem">
+        <TableWrap min="0" wrap>
           <thead>
             <tr>
               <th>Code</th>
@@ -867,58 +806,42 @@ function Accounting({ s, tab }: PaneProps) {
           <Input value={q} onChange={setQ} placeholder="Search entries…" width={180} />
         </FilterBar>
 
-        {!rows.length ? (
-          <Empty>No entries found.</Empty>
-        ) : (
-          <TableWrap min="40rem">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Date</th>
-                <th>Memo</th>
-                <th>Source</th>
-                <th className="text-right">Debit</th>
-                <th className="text-right">Credit</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((j) => {
-                const d = round2(j.lines.reduce((t, l) => t + l.dr, 0));
-                const c = round2(j.lines.reduce((t, l) => t + l.cr, 0));
-                return (
-                  <motion.tr
-                    key={j.ref}
-                    initial={j.fresh ? { backgroundColor: "rgba(31,163,98,0.16)" } : false}
-                    animate={{ backgroundColor: "rgba(31,163,98,0)" }}
-                    transition={{ duration: 2.2, ease: "easeOut" }}
-                  >
-                    <td className="mono">{j.ref}</td>
-                    <td className="text-[var(--text-3)]">{j.date}</td>
-                    <td className="primary">{j.memo}</td>
-                    <td>
-                      <Badge status="Draft">{j.source}</Badge>
-                    </td>
-                    <td className="num font-semibold text-[var(--ink)]">
-                      <Money value={d} currency={s.currency} />
-                    </td>
-                    <td className="num font-semibold text-[var(--ink)]">
-                      <Money value={c} currency={s.currency} />
-                    </td>
-                    <td>
-                      <Badge status="posted">posted</Badge>
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </tbody>
-          </TableWrap>
-        )}
+        <DataView
+          rows={rows}
+          cols={[
+            { key: "ref", label: "#", role: "title", sort: (j) => j.ref, cell: (j) => <span className="mono">{j.ref}</span> },
+            { key: "date", label: "Date", sort: (j) => j.date, cell: (j) => <span className="text-[var(--text-3)]">{j.date}</span> },
+            { key: "memo", label: "Memo", cell: (j) => <span className="primary">{j.memo}</span> },
+            { key: "source", label: "Source", cell: (j) => <Badge status="Draft">{j.source}</Badge> },
+            {
+              key: "dr",
+              label: "Debit",
+              num: true,
+              sort: (j) => j.lines.reduce((t, l) => t + l.dr, 0),
+              cell: (j) => (
+                <Money value={round2(j.lines.reduce((t, l) => t + l.dr, 0))} currency={s.currency} className="font-semibold text-[var(--ink)]" />
+              ),
+            },
+            {
+              key: "cr",
+              label: "Credit",
+              num: true,
+              sort: (j) => j.lines.reduce((t, l) => t + l.cr, 0),
+              cell: (j) => (
+                <Money value={round2(j.lines.reduce((t, l) => t + l.cr, 0))} currency={s.currency} className="font-semibold text-[var(--ink)]" />
+              ),
+            },
+            { key: "status", label: "Status", role: "badge", cell: () => <Badge status="posted">posted</Badge> },
+          ]}
+          rowKey={(j) => j.ref}
+          min="40rem"
+          empty="No entries found."
+        />
       </Card>
 
       {/* Entry detail — the lines behind whichever entry is newest. */}
       <Card title={`${s.journal[0]?.ref ?? ""} · lines`} className="h-max min-w-0 lg:max-w-2xl">
-        <TableWrap min="0">
+        <TableWrap min="0" wrap>
           <thead>
             <tr>
               <th>Account</th>

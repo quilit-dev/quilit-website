@@ -23,6 +23,9 @@ export function ErpDemo() {
   const reduced = useReducedMotion();
   const Pane = PANES[module];
   const tabs = TABS[module];
+  const ALL = NAV.flatMap((g) => g.items);
+  const MODULE_COUNT = ALL.length;
+  const current = ALL.find((i) => i.key === module) ?? ALL[0];
 
   const go = (k: ModuleKey) => {
     setModule(k);
@@ -60,6 +63,15 @@ export function ErpDemo() {
         <span className="erp-badge erp-badge-yellow shrink-0">Demo</span>
       </div>
 
+      {/* On a phone the status bar sits under a 1000px-tall frame, so the one
+          line telling you what to try was measured 305px in and effectively
+          never read. It belongs above the application on small screens —
+          it is demo guidance, not part of the product's chrome. */}
+      <div className="flex items-start gap-2 border-b border-[var(--rule)] bg-[color-mix(in_srgb,var(--accent)_7%,transparent)] px-3.5 py-2 sm:hidden">
+        <span className="mt-[1px] shrink-0 text-[var(--accent)]">→</span>
+        <span className="text-[12px] leading-snug text-[var(--text-2)]">{PANE_HINTS[module]}</span>
+      </div>
+
       <div className="flex min-h-[33rem] flex-col lg:flex-row">
         {/* ── sidebar ─────────────────────────────────────────────────── */}
         <aside className="shrink-0 border-b border-[var(--rule)] bg-[var(--surface)] lg:w-[236px] lg:border-b-0 lg:border-r">
@@ -79,18 +91,37 @@ export function ErpDemo() {
                 ERP Platform
               </span>
             </span>
-            {/* Nine modules stacked would push the actual screen a screenful
-                down the page on a phone, so the rail becomes a disclosure. */}
-            <button
-              type="button"
-              onClick={() => setNavOpen((v) => !v)}
-              aria-expanded={navOpen}
-              aria-label="Toggle module list"
-              className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-[6px] border border-[var(--rule-strong)] text-[var(--text-3)] lg:hidden"
-            >
-              <Icon name={navOpen ? "minus" : "plus"} className="h-3.5 w-3.5" />
-            </button>
           </div>
+
+          {/* Phones get a labelled picker instead of the icon-only disclosure
+              this used to be: a bare "+" next to the logo read as "add
+              something", not "here are the nine modules", so the rail was
+              effectively undiscoverable and the demo looked like one screen. */}
+          <button
+            type="button"
+            onClick={() => setNavOpen((v) => !v)}
+            aria-expanded={navOpen}
+            aria-label="Choose module"
+            className="flex w-full cursor-pointer items-center gap-2 border-b border-[var(--rule)] px-3.5 py-2.5 text-left lg:hidden"
+          >
+            <Icon name={current.icon} className="h-4 w-4 shrink-0 text-[var(--accent)]" />
+            <span className="min-w-0 flex-1">
+              <span className="eyebrow block">Module</span>
+              <span className="block truncate text-[13.5px] font-semibold text-[var(--ink)]">
+                {current.label}
+              </span>
+            </span>
+            <span className="erp-badge erp-badge-purple shrink-0">
+              {navOpen ? "Close" : `${MODULE_COUNT} modules`}
+            </span>
+            <motion.span
+              animate={{ rotate: navOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="shrink-0 text-[var(--text-3)]"
+            >
+              ▾
+            </motion.span>
+          </button>
 
           <nav className={cn("p-2 lg:block", navOpen ? "block" : "hidden")}>
             {NAV.map((g) => (
@@ -119,7 +150,9 @@ export function ErpDemo() {
         <div className="flex min-w-0 flex-1 flex-col">
           {/* topbar */}
           <div className="flex h-[46px] shrink-0 items-center gap-2 border-b border-[var(--rule)] bg-[var(--surface)] px-3.5">
-            <span className="flex min-w-0 items-center gap-1.5 text-[12.5px]">
+            {/* Redundant on a phone — the module picker directly above already
+                names where you are. */}
+            <span className="hidden min-w-0 items-center gap-1.5 text-[12.5px] sm:flex">
               <span className="text-[var(--text-3)]">›</span>
               <span className="truncate font-semibold text-[var(--ink)]">{PAGE[module].title}</span>
             </span>
@@ -151,21 +184,30 @@ export function ErpDemo() {
             <h3 className="text-[19px] font-bold leading-tight tracking-[-0.022em] text-[var(--ink)]">
               {PAGE[module].title}
             </h3>
-            <p className="mb-2 mt-0.5 text-[12px] text-[var(--text-3)]">{PAGE[module].sub}</p>
-            <div className="erp-tabs -mx-3.5 overflow-x-auto px-3.5">
-              {tabs.map((tb, i) => (
-                <button
-                  key={tb.label}
-                  type="button"
-                  onClick={() => tb.live && setTab(i)}
-                  disabled={!tb.live}
-                  title={tb.live ? undefined : "Not part of the demo"}
-                  className={cn("erp-tab", i === tab && "active", !tb.live && "cursor-not-allowed opacity-40")}
-                >
-                  {tb.label}
-                </button>
-              ))}
-            </div>
+            <p className={cn("mt-0.5 text-[12px] text-[var(--text-3)]", tabs.length < 2 ? "pb-3" : "mb-2")}>
+              {PAGE[module].sub}
+            </p>
+            {/* A tab bar of one conveys nothing — several modules have a
+                single view, and on a phone that row is pure cost. Rendered
+                conditionally rather than hidden with a class: `.erp-tabs`
+                sets display:flex and is defined after Tailwind's utilities,
+                so at equal specificity it beats `hidden`. */}
+            {tabs.length > 1 && (
+              <div className="erp-tabs -mx-3.5 overflow-x-auto px-3.5">
+                {tabs.map((tb, i) => (
+                  <button
+                    key={tb.label}
+                    type="button"
+                    onClick={() => tb.live && setTab(i)}
+                    disabled={!tb.live}
+                    title={tb.live ? undefined : "Not part of the demo"}
+                    className={cn("erp-tab", i === tab && "active", !tb.live && "cursor-not-allowed opacity-40")}
+                  >
+                    {tb.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* pane */}
@@ -186,9 +228,10 @@ export function ErpDemo() {
 
           {/* status bar + write-through toast */}
           <div className="relative flex shrink-0 items-center gap-2 border-t border-[var(--rule)] bg-[var(--surface-2)] px-3.5 py-2">
-            <span className="min-w-0 flex-1 truncate text-[11.5px] text-[var(--text-3)]">
+            <span className="hidden min-w-0 flex-1 truncate text-[11.5px] text-[var(--text-3)] sm:block">
               {PANE_HINTS[module]}
             </span>
+            <span className="flex-1 sm:hidden" />
             <button
               type="button"
               onClick={() => act({ type: "reset" })}

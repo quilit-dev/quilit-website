@@ -446,6 +446,7 @@ body {
   color: var(--ink);
 }
 .erp-table .num { text-align: right; font-family: var(--font-mono-var), ui-monospace, monospace; }
+.erp-table-wrap th, .erp-table-wrap td { white-space: normal; }
 .erp-table .primary { color: var(--ink); font-weight: 600; }
 
 /* --- badge: 4px, sentence case, six modifiers ---------------------------- */
