@@ -3,199 +3,268 @@
 import React from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { LBP_RATE, type InvoiceStatus, type QuoteStatus } from "./data";
+import { LBP_RATE } from "./data";
 
 /* ============================================================================
-   The small vocabulary every pane is built from — matched to the real
-   application's chrome rather than to this site's marketing style, because
-   the point of the demo is that it looks like the product.
+   Workspace primitives.
+
+   These mirror the ERP's own component classes (.card, .table-wrap, .badge,
+   .btn, .tabs) rather than this site's styling — see the `.erp` block in
+   globals.css, ported from the application's design system.
    ========================================================================== */
 
+/** Figures are mono, tabular, and right-aligned in cells. */
 export function Money({
   value,
   currency,
   className,
+  blankIfZero,
 }: {
   value: number;
   currency: "USD" | "LBP";
   className?: string;
+  /** The application prints an empty cell rather than a zero in ledger
+      columns, which is what makes a trial balance readable. */
+  blankIfZero?: boolean;
 }) {
+  if (blankIfZero && !value) return <span className={className} />;
   const text =
     currency === "USD"
       ? `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       : `LL ${Math.round(value * LBP_RATE).toLocaleString("en-US")}`;
-  return <span className={cn("font-mono tabular-nums", className)}>{text}</span>;
+  return <span className={cn("mono", className)}>{text}</span>;
 }
 
-const STATUS_TONES: Record<string, string> = {
-  Paid: "border-jade-500/25 bg-jade-500/10 text-jade-700",
-  Unpaid: "border-red-500/25 bg-red-500/8 text-red-600",
-  Void: "border-plum-900/12 bg-plum-900/5 text-plum-900/45",
-  Sent: "border-plum-600/25 bg-plum-600/8 text-plum-700",
-  Draft: "border-plum-900/12 bg-plum-900/5 text-plum-900/50",
-  Converted: "border-jade-500/25 bg-jade-500/10 text-jade-700",
-  "In progress": "border-plum-600/25 bg-plum-600/8 text-plum-700",
-  Queued: "border-plum-900/12 bg-plum-900/5 text-plum-900/50",
-  "QC hold": "border-gold-500/30 bg-gold-500/10 text-gold-700",
-  Low: "border-gold-500/30 bg-gold-500/10 text-gold-700",
-  "In stock": "border-jade-500/25 bg-jade-500/10 text-jade-700",
-  Out: "border-red-500/25 bg-red-500/8 text-red-600",
+/* The application's six badge modifiers, mapped to its status vocabulary. */
+const BADGE: Record<string, string> = {
+  Paid: "green",
+  Balanced: "green",
+  Completed: "green",
+  Accepted: "green",
+  Received: "green",
+  Active: "green",
+  OK: "green",
+  posted: "green",
+  Unpaid: "red",
+  Overdue: "red",
+  reversed: "red",
+  "At Risk": "red",
+  Partial: "yellow",
+  Low: "yellow",
+  "On Hold": "yellow",
+  "Pending Approval": "yellow",
+  Fair: "yellow",
+  Sent: "blue",
+  "In Progress": "blue",
+  Invoiced: "purple",
+  Draft: "gray",
+  Void: "gray",
+  Voided: "gray",
+  Cancelled: "gray",
 };
 
-export function Pill({
-  children,
-  status,
-}: {
-  children?: React.ReactNode;
-  status: InvoiceStatus | QuoteStatus | string;
-}) {
+export function Badge({ status, children }: { status: string; children?: React.ReactNode }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-md border px-2 py-[3px] text-[0.7rem] font-semibold",
-        STATUS_TONES[status] ?? STATUS_TONES.Draft,
-      )}
-    >
-      {children ?? status}
-    </span>
+    <span className={`erp-badge erp-badge-${BADGE[status] ?? "gray"}`}>{children ?? status}</span>
   );
 }
 
-/** Page title block, mirroring the application's header. */
-export function PaneHead({
-  title,
-  sub,
-  actions,
-}: {
-  title: string;
-  sub?: string;
-  actions?: React.ReactNode;
-}) {
+/* ---- page + card scaffolding -------------------------------------------- */
+
+export function PageHeader({ title, sub }: { title: string; sub?: string }) {
   return (
-    <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h3 className="font-display text-[1.35rem] font-bold tracking-[-0.026em] text-plum-950">
-          {title}
-        </h3>
-        {sub && <p className="mt-0.5 text-[0.78rem] text-plum-900/45">{sub}</p>}
-      </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    <div className="mb-3">
+      <h3 className="text-[19px] font-bold leading-tight tracking-[-0.022em] text-[var(--ink)]">
+        {title}
+      </h3>
+      {sub && <p className="mt-0.5 text-[12.5px] text-[var(--text-3)]">{sub}</p>}
     </div>
-  );
-}
-
-/** Every table lives in one of these: it scrolls inside itself so a dense
-    grid can never widen the page on a phone. */
-export function TableWrap({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-plum-900/8 bg-white">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[42rem] border-collapse text-left">{children}</table>
-      </div>
-    </div>
-  );
-}
-
-export function Th({
-  children,
-  right,
-}: {
-  children: React.ReactNode;
-  right?: boolean;
-}) {
-  return (
-    <th
-      className={cn(
-        "whitespace-nowrap border-b border-plum-900/8 bg-bone-50 px-3 py-2.5 font-mono text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-plum-900/40",
-        right && "text-right",
-      )}
-    >
-      {children}
-    </th>
-  );
-}
-
-export function Td({
-  children,
-  right,
-  className,
-}: {
-  children: React.ReactNode;
-  right?: boolean;
-  className?: string;
-}) {
-  return (
-    <td
-      className={cn(
-        "whitespace-nowrap border-b border-plum-900/5 px-3 py-2.5 text-[0.82rem] text-plum-900/75",
-        right && "text-right",
-        className,
-      )}
-    >
-      {children}
-    </td>
   );
 }
 
 export function Card({
+  title,
+  actions,
   children,
   className,
 }: {
+  title?: string;
+  actions?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border border-plum-900/8 bg-white p-4 shadow-[0_1px_2px_rgba(42,29,41,0.03)]",
-        className,
+    <div className={cn("erp-card min-w-0", className)}>
+      {(title || actions) && (
+        <div className="erp-card-header">
+          <span className="erp-card-title">{title}</span>
+          {actions && <div className="flex flex-wrap items-center gap-1.5">{actions}</div>}
+        </div>
       )}
-    >
       {children}
     </div>
   );
 }
 
-export function Kpi({
-  label,
-  children,
-  note,
-  tone = "plum",
-}: {
-  label: string;
-  children: React.ReactNode;
-  note?: string;
-  tone?: "plum" | "jade" | "red" | "gold";
-}) {
-  const tones = {
-    plum: "text-plum-700",
-    jade: "text-jade-600",
-    red: "text-red-600",
-    gold: "text-gold-600",
-  }[tone];
+/** Filter strip under a card header — the application's standard control row. */
+export function FilterBar({ children }: { children: React.ReactNode }) {
   return (
-    <Card>
-      <div className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-plum-900/40">
-        {label}
-      </div>
-      <div className={cn("mt-2 text-[1.3rem] font-bold leading-none", tones)}>{children}</div>
-      {note && <div className="mt-1.5 text-[0.72rem] text-plum-900/40">{note}</div>}
-    </Card>
+    <div className="flex flex-wrap items-center gap-1.5 border-b border-[var(--rule)] px-3.5 py-2">
+      {children}
+    </div>
   );
 }
 
-/** The demo's only button. `primary` is the plum action the app uses for the
-    one thing worth doing on a screen. */
+export function Input({
+  value,
+  onChange,
+  placeholder,
+  width = 150,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  width?: number;
+}) {
+  return (
+    <input
+      className="erp-input min-w-0"
+      style={{ width }}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
+export function Select({
+  value,
+  onChange,
+  options,
+  width = 150,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  width?: number;
+}) {
+  return (
+    <select
+      className="erp-input cursor-pointer"
+      style={{ width }}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/* ---- table --------------------------------------------------------------- */
+
+/** Scrolls inside itself so a dense grid can never widen the page. */
+export function TableWrap({
+  children,
+  min = "44rem",
+}: {
+  children: React.ReactNode;
+  min?: string;
+}) {
+  return (
+    <div className="min-w-0 overflow-x-auto">
+      <table className="erp-table" style={{ minWidth: min }}>
+        {children}
+      </table>
+    </div>
+  );
+}
+
+/** Header cell that actually sorts, with the application's ▲/▼ indicator. */
+export function SortableTh<K extends string>({
+  label,
+  sortKey,
+  sort,
+  dir,
+  onSort,
+  right,
+}: {
+  label: string;
+  sortKey: K;
+  sort: K;
+  dir: "asc" | "desc";
+  onSort: (k: K) => void;
+  right?: boolean;
+}) {
+  const on = sort === sortKey;
+  return (
+    <th
+      onClick={() => onSort(sortKey)}
+      className={cn("cursor-pointer select-none hover:text-[var(--text-2)]", right && "text-right")}
+      aria-sort={on ? (dir === "asc" ? "ascending" : "descending") : "none"}
+    >
+      {label}
+      <span className={cn("ml-1", on ? "text-[var(--accent)]" : "opacity-25")}>
+        {on ? (dir === "asc" ? "▲" : "▼") : "▲"}
+      </span>
+    </th>
+  );
+}
+
+/** Generic client-side sort, matching the application's comparator. */
+export function useSort<T, K extends string>(rows: T[], initial: K, get: (r: T, k: K) => unknown) {
+  const [sort, setSort] = React.useState<K>(initial);
+  const [dir, setDir] = React.useState<"asc" | "desc">("asc");
+  const onSort = React.useCallback(
+    (k: K) => {
+      setSort((prev) => {
+        if (prev === k) {
+          setDir((d) => (d === "asc" ? "desc" : "asc"));
+          return prev;
+        }
+        setDir("asc");
+        return k;
+      });
+    },
+    [],
+  );
+  const sorted = React.useMemo(() => {
+    const out = [...rows];
+    out.sort((a, b) => {
+      const av = get(a, sort) ?? "";
+      const bv = get(b, sort) ?? "";
+      const cmp =
+        typeof av === "number" && typeof bv === "number"
+          ? av - bv
+          : String(av).localeCompare(String(bv), undefined, { numeric: true });
+      return dir === "asc" ? cmp : -cmp;
+    });
+    return out;
+  }, [rows, sort, dir, get]);
+  return { sorted, sort, dir, onSort };
+}
+
+export function Empty({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="px-4 py-8 text-center text-[12.5px] text-[var(--text-3)]">{children}</div>
+  );
+}
+
+/* ---- buttons ------------------------------------------------------------- */
+
 export function Btn({
   children,
   onClick,
-  variant = "ghost",
+  variant = "secondary",
   disabled,
   title,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
-  variant?: "primary" | "ghost" | "jade";
+  variant?: "primary" | "secondary" | "success" | "ghost";
   disabled?: boolean;
   title?: string;
 }) {
@@ -205,75 +274,78 @@ export function Btn({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      whileTap={disabled ? undefined : { scale: 0.96 }}
+      whileTap={disabled ? undefined : { scale: 0.97 }}
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
-      className={cn(
-        "inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[0.78rem] font-semibold transition-colors duration-200",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-plum-600",
-        disabled && "cursor-not-allowed opacity-40",
-        variant === "primary" &&
-          "bg-gradient-to-b from-plum-600 to-plum-800 text-white shadow-[0_6px_14px_-6px_rgba(42,29,41,0.6),inset_0_1px_1px_rgba(255,255,255,0.22)] hover:from-plum-500 hover:to-plum-700",
-        variant === "jade" &&
-          "bg-jade-600 text-white shadow-[0_6px_14px_-6px_rgba(16,90,62,0.6)] hover:bg-jade-500",
-        variant === "ghost" &&
-          "border border-plum-900/12 bg-white text-plum-900/70 hover:border-plum-600/30 hover:text-plum-800",
-      )}
+      className={`erp-btn erp-btn-${variant}`}
     >
       {children}
     </motion.button>
   );
 }
 
-/** Segmented control — the USD/LBP switch and the status filters. */
-export function Segmented<T extends string>({
-  options,
-  value,
-  onChange,
-  idPrefix,
+/* ---- KPI tile ------------------------------------------------------------
+   The dashboard's signature element: caps label, Inter 700 hero value,
+   monospace trend pill with ▲/▼ glyphs. */
+
+export function Stat({
+  label,
+  children,
+  note,
+  trend,
+  tone = "ink",
 }: {
-  options: readonly T[];
-  value: T;
-  onChange: (v: T) => void;
-  idPrefix: string;
+  label: string;
+  children: React.ReactNode;
+  note?: string;
+  trend?: { dir: "up" | "down"; pct: string };
+  tone?: "ink" | "affirm" | "negate" | "caution" | "accent";
 }) {
+  const colour = {
+    ink: "var(--ink)",
+    affirm: "var(--affirm)",
+    negate: "var(--negate)",
+    caution: "var(--caution)",
+    accent: "var(--accent)",
+  }[tone];
   return (
-    <div className="inline-flex items-center gap-0.5 rounded-lg border border-plum-900/10 bg-bone-50 p-0.5">
-      {options.map((o) => (
-        <button
-          key={o}
-          type="button"
-          onClick={() => onChange(o)}
-          aria-pressed={o === value}
-          className={cn(
-            "relative cursor-pointer rounded-[6px] px-2.5 py-1 text-[0.74rem] font-semibold transition-colors duration-200",
-            o === value ? "text-white" : "text-plum-900/50 hover:text-plum-800",
-          )}
-        >
-          {o === value && (
-            <motion.span
-              layoutId={`${idPrefix}-seg`}
-              className="absolute inset-0 rounded-[6px] bg-gradient-to-b from-plum-600 to-plum-800"
-              transition={{ type: "spring", stiffness: 420, damping: 34 }}
-            />
-          )}
-          <span className="relative">{o}</span>
-        </button>
-      ))}
+    <div className="erp-card min-w-0 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <span className="eyebrow">{label}</span>
+        {trend && (
+          <span
+            className="mono shrink-0 text-[10.5px] font-semibold"
+            style={{ color: trend.dir === "up" ? "var(--affirm)" : "var(--negate)" }}
+          >
+            {trend.dir === "up" ? "▲" : "▼"} {trend.pct}
+          </span>
+        )}
+      </div>
+      <div
+        className="mt-1.5 truncate text-[22px] font-bold leading-none tracking-[-0.028em]"
+        style={{ color: colour }}
+      >
+        {children}
+      </div>
+      {note && <div className="mt-1 truncate text-[11.5px] text-[var(--text-3)]">{note}</div>}
     </div>
   );
 }
 
-/** Thin progress bar. scaleX only — width would relayout each frame. */
-export function Bar({ pct, tone = "plum" }: { pct: number; tone?: "plum" | "jade" | "gold" }) {
-  const tones = { plum: "bg-plum-600", jade: "bg-jade-500", gold: "bg-gold-500" }[tone];
+/** Thin progress bar — scaleX only, never width. */
+export function Bar({ pct, tone = "accent" }: { pct: number; tone?: "accent" | "affirm" | "caution" }) {
+  const colour = {
+    accent: "var(--accent)",
+    affirm: "var(--affirm)",
+    caution: "var(--caution)",
+  }[tone];
   return (
-    <span className="block h-1.5 w-full overflow-hidden rounded-full bg-plum-900/8">
+    <span className="block h-1 w-full overflow-hidden rounded-full bg-[var(--surface-3)]">
       <motion.span
-        className={cn("block h-full origin-left rounded-full", tones)}
+        className="block h-full origin-left rounded-full"
+        style={{ background: colour, willChange: "transform" }}
         initial={{ scaleX: 0 }}
         animate={{ scaleX: Math.max(0, Math.min(1, pct / 100)) }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        style={{ willChange: "transform" }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       />
     </span>
   );

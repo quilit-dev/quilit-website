@@ -67,41 +67,50 @@ export const ACCOUNTS = {
 
 /* ---- products ------------------------------------------------------------ */
 
+/** Product types are the ERP's own vocabulary (inventory.ptype_*). */
+export type ProductType = "Raw material" | "Semi-finished" | "Finished" | "Consumable";
+
 export type Product = {
   sku: string;
   name: string;
+  category: string;
+  type: ProductType;
   price: number; // tax-inclusive shelf price
+  cost: number; // unit cost, for stock valuation
   stock: number;
-  reorder: number;
+  reorder: number; // "Min Stock" in the application
+  supplier: string;
 };
 
 export const PRODUCTS: Product[] = [
-  { sku: "PRD-A", name: "Product Alpha", price: 220.0, stock: 48, reorder: 20 },
-  { sku: "PRD-B", name: "Product Beta", price: 95.0, stock: 14, reorder: 20 },
-  { sku: "PRD-G", name: "Product Gamma", price: 34.6, stock: 132, reorder: 40 },
-  { sku: "MAT-G", name: "Material Gamma", price: 17.5, stock: 8, reorder: 25 },
-  { sku: "PRD-D", name: "Product Delta", price: 61.2, stock: 76, reorder: 30 },
-  { sku: "PRD-E", name: "Product Epsilon", price: 42.0, stock: 5, reorder: 15 },
-  { sku: "PRD-Z", name: "Product Zeta", price: 99.0, stock: 210, reorder: 50 },
-  { sku: "PRD-H", name: "Product Eta", price: 65.8, stock: 33, reorder: 25 },
+  { sku: "PRD-A", name: "Product Alpha", category: "Finished goods", type: "Finished", price: 220.0, cost: 148.2, stock: 48, reorder: 20, supplier: "Supplier Alpha" },
+  { sku: "PRD-B", name: "Product Beta", category: "Finished goods", type: "Finished", price: 95.0, cost: 61.4, stock: 14, reorder: 20, supplier: "Supplier Alpha" },
+  { sku: "PRD-G", name: "Product Gamma", category: "Finished goods", type: "Finished", price: 34.6, cost: 21.9, stock: 132, reorder: 40, supplier: "Supplier Beta" },
+  { sku: "MAT-G", name: "Material Gamma", category: "Raw materials", type: "Raw material", price: 17.5, cost: 11.2, stock: 8, reorder: 25, supplier: "Supplier Gamma" },
+  { sku: "PRD-D", name: "Product Delta", category: "Finished goods", type: "Finished", price: 61.2, cost: 39.8, stock: 76, reorder: 30, supplier: "Supplier Beta" },
+  { sku: "PRD-E", name: "Product Epsilon", category: "Accessories", type: "Consumable", price: 42.0, cost: 26.5, stock: 5, reorder: 15, supplier: "Supplier Delta" },
+  { sku: "PRD-Z", name: "Product Zeta", category: "Accessories", type: "Consumable", price: 99.0, cost: 63.0, stock: 210, reorder: 50, supplier: "Supplier Delta" },
+  { sku: "SEM-A", name: "Sub-assembly Alpha", category: "Work in progress", type: "Semi-finished", price: 65.8, cost: 44.1, stock: 33, reorder: 25, supplier: "In-house" },
 ];
 
 /* ---- quotations ---------------------------------------------------------- */
 
-export type QuoteStatus = "Draft" | "Sent" | "Converted";
+export type QuoteStatus = "Draft" | "Sent" | "Accepted" | "Invoiced";
 export type Quote = {
   ref: string;
   client: string;
-  total: number;
+  project?: string;
+  total: number; // incl. VAT
   status: QuoteStatus;
   date: string;
+  invoice?: string; // the "Invoice" column — filled once converted
 };
 
 export const QUOTES: Quote[] = [
   { ref: "QTN-2026-0031", client: "Client Theta", total: 4335.75, status: "Sent", date: "Jul 29, 2026" },
-  { ref: "QTN-2026-0033", client: "Client Epsilon", total: 8410.5, status: "Sent", date: "Jul 27, 2026" },
+  { ref: "QTN-2026-0033", client: "Client Epsilon", project: "Project Epsilon", total: 8410.5, status: "Sent", date: "Jul 27, 2026" },
   { ref: "QTN-2026-0032", client: "Client Iota", total: 1920.0, status: "Draft", date: "Jul 26, 2026" },
-  { ref: "QTN-2026-0029", client: "Client Zeta", total: 2150.0, status: "Converted", date: "Jul 21, 2026" },
+  { ref: "QTN-2026-0029", client: "Client Zeta", project: "Project Zeta", total: 2150.0, status: "Accepted", date: "Jul 21, 2026", invoice: "INV-2026-0002" },
 ];
 
 /* ---- invoices ------------------------------------------------------------ */
@@ -190,9 +199,10 @@ export const DEALS: Deal[] = [
 /* ---- manufacturing ------------------------------------------------------- */
 
 export const ORDERS = [
-  { ref: "MO-2026-0044", product: "Product Alpha", qty: 120, state: "In progress", pct: 64 },
-  { ref: "MO-2026-0045", product: "Product Gamma", qty: 400, state: "Queued", pct: 0 },
-  { ref: "MO-2026-0043", product: "Product Beta", qty: 60, state: "QC hold", pct: 100 },
+  { ref: "MO-2026-0044", product: "Product Alpha", qty: 120, priority: "High", due: "Aug 04, 2026", state: "In Progress", cost: 7584.0, pct: 64 },
+  { ref: "MO-2026-0045", product: "Product Gamma", qty: 400, priority: "Normal", due: "Aug 12, 2026", state: "Draft", cost: 8760.0, pct: 0 },
+  { ref: "MO-2026-0043", product: "Product Beta", qty: 60, priority: "Normal", due: "Jul 30, 2026", state: "On Hold", cost: 3684.0, pct: 100 },
+  { ref: "MO-2026-0041", product: "Product Delta", qty: 90, priority: "Low", due: "Jul 24, 2026", state: "Completed", cost: 3582.0, pct: 100 },
 ] as const;
 
 export const BOM = [
@@ -232,3 +242,66 @@ export function splitVat(gross: number) {
 export function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
+
+/* ---- tabs -----------------------------------------------------------------
+   Every module in the real application is a tab bar over sub-views. Leaving
+   them out was the single biggest structural difference between the demo and
+   the product. Only the first tab of each is implemented; the rest are shown
+   disabled, which is honest and still conveys the real depth. */
+
+export const TABS: Record<ModuleKey, { label: string; live?: boolean }[]> = {
+  dashboard: [{ label: "Overview", live: true }],
+  crm: [
+    { label: "Dashboard" },
+    { label: "Deals", live: true },
+    { label: "Leads" },
+    { label: "Contacts" },
+    { label: "Activities" },
+  ],
+  quotations: [{ label: "Quotations", live: true }],
+  invoices: [{ label: "Invoices", live: true }],
+  pos: [{ label: "Register", live: true }, { label: "Sessions" }, { label: "Sales History" }],
+  inventory: [{ label: "Items", live: true }, { label: "Lots" }, { label: "Movements" }],
+  manufacturing: [
+    { label: "Production Orders", live: true },
+    { label: "Bills of Materials", live: true },
+    { label: "Resources" },
+    { label: "QC" },
+  ],
+  accounting: [
+    { label: "Journal", live: true },
+    { label: "Trial Balance", live: true },
+    { label: "Chart of Accounts" },
+    { label: "General Ledger" },
+    { label: "Income Statement" },
+    { label: "Balance Sheet" },
+    { label: "Cash Flow" },
+    { label: "Closing" },
+  ],
+  reports: [
+    { label: "VAT Report", live: true },
+    { label: "Invoice Aging", live: true },
+    { label: "Financial Summary" },
+    { label: "Project Profitability" },
+    { label: "Client Revenue" },
+  ],
+};
+
+/** Page titles and subtitles, taken from the application's own locale file. */
+export const PAGE: Record<ModuleKey, { title: string; sub: string }> = {
+  dashboard: { title: "Dashboard", sub: "Real-time overview" },
+  crm: { title: "CRM", sub: "Leads, deals pipeline, contacts and activities" },
+  quotations: { title: "Quotations", sub: "Draft → Sent → Accepted → Convert to Invoice" },
+  invoices: { title: "Invoices", sub: "Billing, payments and receivables" },
+  pos: { title: "Point of Sale", sub: "Register, sessions and sales history" },
+  inventory: { title: "Inventory", sub: "Stock on hand, valuation and reorder levels" },
+  manufacturing: {
+    title: "Manufacturing",
+    sub: "Bills of materials, production orders, raw-material consumption and cost",
+  },
+  accounting: {
+    title: "Accounting",
+    sub: "Chart of accounts, journal, ledger and financial statements",
+  },
+  reports: { title: "Reports", sub: "Business intelligence & analytics" },
+};

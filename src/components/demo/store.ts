@@ -90,13 +90,15 @@ function reducer(s: State, a: Action): State {
     /* -- quotation → invoice -------------------------------------------- */
     case "convertQuote": {
       const q = s.quotes.find((x) => x.ref === a.ref);
-      if (!q || q.status === "Converted") return s;
+      if (!q || q.status === "Invoiced") return s;
       const ref = `INV-2026-${pad(s.nextInvoice, 4)}`;
       const { net, vat } = splitVat(q.total);
       const je = `JE-2026-${pad(s.nextJournal, 5)}`;
       return {
         ...s,
-        quotes: s.quotes.map((x) => (x.ref === a.ref ? { ...x, status: "Converted" } : x)),
+        quotes: s.quotes.map((x) =>
+          x.ref === a.ref ? { ...x, status: "Invoiced" as const, invoice: ref } : x,
+        ),
         invoices: [
           { ref, quote: q.ref, client: q.client, total: q.total, paid: 0, status: "Unpaid", due: "Aug 28, 2026" },
           ...s.invoices,

@@ -343,3 +343,195 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .floaty { animation: none; }
 }
+
+/* ============================================================================
+   Workspace — the ERP's own design system, scoped to the embedded demo.
+
+   Ported from erp-system/DESIGN_SYSTEM.md and index.css rather than eyeballed
+   from screenshots, so the frame reads as the actual application: cool light
+   surface, plum #714B67 (not the site's #6C4D69), Inter, 8px cards, 6px
+   buttons, 4px badges, hairline horizontal rules with no banding.
+
+   Everything is under `.erp` so none of it can leak into the marketing page,
+   whose palette and type are deliberately different.
+   ========================================================================== */
+
+.erp {
+  --bg: #F7F7FA;
+  --surface: #FFFFFF;
+  --surface-2: #F2F2F6;
+  --surface-3: #E9E9EF;
+  --rule: #E5E5EC;
+  --rule-strong: #CFCFD9;
+  --ink: #1F1F2E;
+  --text-2: #5A5C6F;
+  --text-3: #8A8C9D;
+  --accent: #714B67;
+  --accent-2: #5C3D54;
+  --affirm: #1FA362;
+  --caution: #E29A2C;
+  --negate: #D14545;
+  --info: #2C7BC4;
+
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r: 8px;
+  --r-lg: 12px;
+
+  --shadow-xs: 0 1px 2px rgba(31, 31, 46, 0.06);
+  --shadow: 0 2px 8px rgba(31, 31, 46, 0.09);
+
+  font-family: var(--font-erp-var), ui-sans-serif, system-ui, sans-serif;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* Numbers are first-class: mono, tabular, right-aligned in cells. */
+.erp .mono { font-family: var(--font-mono-var), ui-monospace, monospace; }
+
+.erp .eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+}
+
+/* --- card ---------------------------------------------------------------- */
+.erp-card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-xs);
+}
+.erp-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.erp-card-title { font-weight: 700; letter-spacing: -0.012em; font-size: 13.5px; }
+
+/* --- table: hairline rules, no vertical lines, no banding ---------------- */
+.erp-table { width: 100%; border-collapse: collapse; }
+.erp-table th {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  background: var(--surface-2);
+  text-align: left;
+  padding: 7px 10px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--rule);
+}
+.erp-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+  color: var(--text-2);
+}
+.erp-table tbody tr:hover { background: var(--surface-2); }
+.erp-table tfoot td {
+  border-top: 2px solid var(--rule-strong);
+  border-bottom: none;
+  background: var(--surface-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+.erp-table .num { text-align: right; font-family: var(--font-mono-var), ui-monospace, monospace; }
+.erp-table .primary { color: var(--ink); font-weight: 600; }
+
+/* --- badge: 4px, sentence case, six modifiers ---------------------------- */
+.erp-badge {
+  display: inline-block;
+  border-radius: var(--r-xs);
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+.erp-badge-gray   { background: var(--surface-3); color: var(--text-2); }
+.erp-badge-green  { background: rgba(31, 163, 98, 0.12);  color: #157A49; }
+.erp-badge-yellow { background: rgba(226, 154, 44, 0.14); color: #9A6614; }
+.erp-badge-red    { background: rgba(209, 69, 69, 0.12);  color: #A93232; }
+.erp-badge-blue   { background: rgba(44, 123, 196, 0.12); color: #215E97; }
+.erp-badge-purple { background: rgba(113, 75, 103, 0.12); color: var(--accent); }
+
+/* --- buttons: 6px, weight 600, no gradients ------------------------------ */
+.erp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: var(--r-sm);
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.16s, border-color 0.16s, color 0.16s;
+}
+.erp-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.erp-btn-primary { background: var(--accent); color: #fff; }
+.erp-btn-primary:not(:disabled):hover { background: var(--accent-2); }
+.erp-btn-secondary { background: var(--surface); color: var(--text-2); border-color: var(--rule-strong); }
+.erp-btn-secondary:not(:disabled):hover { color: var(--ink); border-color: var(--text-3); }
+.erp-btn-success { background: var(--affirm); color: #fff; }
+.erp-btn-success:not(:disabled):hover { background: #17864F; }
+.erp-btn-ghost { background: transparent; color: var(--text-3); }
+.erp-btn-ghost:hover { color: var(--accent); }
+
+/* --- tabs: underline, 2px accent rule on the active one ------------------ */
+.erp-tabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--rule); }
+.erp-tab {
+  padding: 7px 11px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.16s;
+}
+.erp-tab:hover { color: var(--text-2); }
+.erp-tab.active { color: var(--accent); font-weight: 600; letter-spacing: -0.008em; border-bottom-color: var(--accent); }
+
+/* --- sidebar: active item is a solid plum fill, no rail ------------------ */
+.erp-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 6px 9px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  color: var(--text-2);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.16s, color 0.16s;
+}
+.erp-nav-link:hover { background: var(--surface-2); color: var(--ink); }
+.erp-nav-link.active { background: var(--accent); color: #fff; font-weight: 600; }
+
+/* --- form controls: hairline, 6px, 3px accent ring on focus -------------- */
+.erp-input {
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+  font-size: 12.5px;
+  color: var(--ink);
+  outline: none;
+}
+.erp-input:focus { box-shadow: 0 0 0 3px rgba(113, 75, 103, 0.22); }
+.erp-input::placeholder { color: var(--text-3); }

@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Icon } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import {
   AGING,
@@ -16,24 +15,34 @@ import {
   type ModuleKey,
 } from "./data";
 import { revenueOf, trialBalance, vatOf, type Action, type State } from "./store";
-import { Bar, Btn, Card, Kpi, Money, PaneHead, Pill, Segmented, TableWrap, Td, Th } from "./ui";
+import {
+  Badge,
+  Bar,
+  Btn,
+  Card,
+  Empty,
+  FilterBar,
+  Input,
+  Money,
+  Select,
+  SortableTh,
+  Stat,
+  TableWrap,
+  useSort,
+} from "./ui";
 
-type PaneProps = { s: State; act: (a: Action) => void };
+/* ============================================================================
+   The nine module screens.
+
+   Column sets, filter controls, badge vocabulary and empty-state wording are
+   taken from the application's own page components (pages/Invoices.jsx,
+   accounting/TrialBalance.jsx, pos/RegisterView.jsx and so on) rather than
+   invented — see the comment in each pane for its source.
+   ========================================================================== */
+
+type PaneProps = { s: State; act: (a: Action) => void; tab: number };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-
-/**
- * Plain row.
- *
- * These used to arrive in a per-row stagger. The pane as a whole already
- * fades and lifts on mount, so the rows were a second, redundant motion —
- * and starting nine extra animations on every module click cost real frames
- * (Inventory alone: nine rows plus eight bars). Measured 90 -> 118fps when
- * the row animation came out, with no perceptible loss.
- */
-function Row({ children }: { i?: number; children: React.ReactNode }) {
-  return <tr className="transition-colors hover:bg-bone-50">{children}</tr>;
-}
 
 /* ==========================================================================
    Dashboard
@@ -43,78 +52,69 @@ function Dashboard({ s }: PaneProps) {
   const revenue = revenueOf(s.journal);
   const expenses = 17724.6;
   const profit = round2(revenue - expenses);
-  const lowStock = s.products.filter((p) => p.stock <= p.reorder).length;
+  const low = s.products.filter((p) => p.stock <= p.reorder);
   const unpaid = s.invoices.filter((i) => i.status === "Unpaid");
   const owed = round2(unpaid.reduce((t, i) => t + i.total - i.paid, 0));
+  const stockValue = round2(s.products.reduce((t, p) => t + p.cost * p.stock, 0));
 
   return (
     <>
-      <PaneHead title="Good morning, admin" sub="Friday, July 31, 2026 · Real-time overview" />
-
-      <div className="mb-4 flex flex-wrap gap-2">
+      {/* "Needs attention" strip — the application's own dashboard opener. */}
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+        <span className="eyebrow mr-1">Needs attention</span>
         {[
-          { t: `${unpaid.length} unpaid — action needed`, tone: "red" },
-          { t: `${lowStock} items low on stock`, tone: "gold" },
-          { t: "1 leave request pending", tone: "gold" },
-          { t: "1 production order due within 7 days", tone: "plum" },
+          { t: `${unpaid.length} unpaid — action needed`, b: "Unpaid" },
+          { t: `${low.length} items low on stock`, b: "Low" },
+          { t: "1 leave request pending", b: "Pending Approval" },
+          { t: "1 production order due within 7 days", b: "In Progress" },
         ].map((c) => (
-          <span
-            key={c.t}
-            className={cn(
-              "rounded-lg border px-2.5 py-1.5 text-[0.74rem] font-medium",
-              c.tone === "red" && "border-red-500/20 bg-red-500/6 text-red-600",
-              c.tone === "gold" && "border-gold-500/25 bg-gold-500/8 text-gold-700",
-              c.tone === "plum" && "border-plum-600/20 bg-plum-600/6 text-plum-700",
-            )}
-          >
+          <Badge key={c.t} status={c.b}>
             {c.t}
-          </span>
+          </Badge>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label="Monthly revenue" tone="jade" note="Posted to 4000 · Sales">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <Stat label="Monthly revenue" tone="affirm" note="Posted to 4000 · Sales" trend={{ dir: "up", pct: "12.4%" }}>
           <Money value={revenue} currency={s.currency} />
-        </Kpi>
-        <Kpi label="Monthly expenses" tone="red" note="Operating costs">
+        </Stat>
+        <Stat label="Monthly expenses" tone="negate" note="Operating costs" trend={{ dir: "down", pct: "3.1%" }}>
           <Money value={expenses} currency={s.currency} />
-        </Kpi>
-        <Kpi
-          label="Net profit"
-          tone={profit >= 0 ? "jade" : "red"}
-          note={`Margin ${revenue ? Math.round((profit / revenue) * 100) : 0}%`}
-        >
+        </Stat>
+        <Stat label="Net profit" tone={profit >= 0 ? "affirm" : "negate"} note={`Margin ${revenue ? Math.round((profit / revenue) * 100) : 0}%`}>
           <Money value={profit} currency={s.currency} />
-        </Kpi>
-        <Kpi label="Receivable" tone="gold" note={`${unpaid.length} open invoices`}>
+        </Stat>
+        <Stat label="Outstanding" tone="caution" note={`${unpaid.length} open invoices`}>
           <Money value={owed} currency={s.currency} />
-        </Kpi>
+        </Stat>
       </div>
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-[1.4fr_1fr]">
-        <Card>
-          <div className="mb-3 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-plum-900/40">
-            Revenue · last six months
+      <div className="mt-2 grid gap-2 lg:grid-cols-[1.5fr_1fr]">
+        <Card title="Income vs Expenses" actions={<span className="text-[11.5px] text-[var(--text-3)]">Last 6 months</span>}>
+          <div className="p-3">
+            <MiniChart />
           </div>
-          <MiniChart />
         </Card>
-        <Card>
-          <div className="mb-3 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-plum-900/40">
-            Operations today
+        <Card title="Operations today">
+          <div className="p-3">
+            <ul className="space-y-1.5">
+              {[
+                ["POS sales today", String(s.invoices.filter((i) => i.ref.startsWith("POS")).length)],
+                ["Cash drawers open", "2"],
+                ["In production", "3"],
+                ["Stock value", ""],
+              ].map(([k, v]) => (
+                <li key={k} className="flex items-center justify-between text-[12.5px]">
+                  <span className="text-[var(--text-2)]">{k}</span>
+                  {v ? (
+                    <span className="mono font-semibold text-[var(--ink)]">{v}</span>
+                  ) : (
+                    <Money value={stockValue} currency={s.currency} className="font-semibold text-[var(--ink)]" />
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="space-y-2.5">
-            {[
-              ["POS sales today", s.invoices.filter((i) => i.ref.startsWith("POS")).length],
-              ["Cash drawers open", 2],
-              ["In production", 3],
-              ["On leave today", 1],
-            ].map(([k, v]) => (
-              <li key={k as string} className="flex items-center justify-between text-[0.82rem]">
-                <span className="text-plum-900/55">{k}</span>
-                <span className="font-mono font-bold text-plum-900">{v}</span>
-              </li>
-            ))}
-          </ul>
         </Card>
       </div>
     </>
@@ -124,17 +124,17 @@ function Dashboard({ s }: PaneProps) {
 function MiniChart() {
   const max = Math.max(...REVENUE_BY_MONTH.map((r) => r.v));
   return (
-    <div className="flex h-[122px] items-end gap-2">
+    <div className="flex h-[104px] items-end gap-2">
       {REVENUE_BY_MONTH.map((r, i) => (
-        <div key={r.m} className="flex flex-1 flex-col items-center gap-1.5">
+        <div key={r.m} className="flex flex-1 flex-col items-center gap-1">
           <motion.span
-            className="w-full origin-bottom rounded-t-[3px] bg-gradient-to-t from-plum-700 to-plum-500"
-            style={{ height: `${(r.v / max) * 100}px`, willChange: "transform" }}
+            className="w-full origin-bottom rounded-t-[2px]"
+            style={{ height: `${(r.v / max) * 88}px`, background: "var(--accent)", willChange: "transform" }}
             initial={{ scaleY: 0 }}
             animate={{ scaleY: 1 }}
-            transition={{ duration: 0.6, ease: EASE, delay: i * 0.06 }}
+            transition={{ duration: 0.55, ease: EASE, delay: i * 0.05 }}
           />
-          <span className="font-mono text-[0.58rem] text-plum-900/40">{r.m}</span>
+          <span className="mono text-[10px] text-[var(--text-3)]">{r.m}</span>
         </div>
       ))}
     </div>
@@ -142,38 +142,31 @@ function MiniChart() {
 }
 
 /* ==========================================================================
-   CRM — click a deal to advance its stage
+   CRM — the Deals pipeline tab
    ========================================================================== */
 
 function Crm({ s, act }: PaneProps) {
+  const open = s.deals.filter((d) => d.stage !== "Won").reduce((t, d) => t + d.value, 0);
   return (
-    <>
-      <PaneHead
-        title="CRM"
-        sub="Click a deal to move it along the pipeline"
-        actions={
-          <span className="font-mono text-[0.7rem] text-plum-900/40">
-            Weighted pipeline{" "}
-            <Money
-              className="font-bold text-plum-800"
-              value={s.deals.filter((d) => d.stage !== "Won").reduce((t, d) => t + d.value, 0)}
-              currency={s.currency}
-            />
-          </span>
-        }
-      />
-      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+    <Card
+      title="Deals pipeline"
+      actions={
+        <span className="text-[11.5px] text-[var(--text-3)]">
+          Weighted pipeline{" "}
+          <Money value={open} currency={s.currency} className="font-semibold text-[var(--ink)]" />
+        </span>
+      }
+    >
+      <div className="grid gap-2 p-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {STAGES.map((stage) => {
           const deals = s.deals.filter((d) => d.stage === stage);
           return (
-            <div key={stage} className="rounded-xl border border-plum-900/8 bg-bone-50/70 p-2.5">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-plum-900/45">
-                  {stage}
-                </span>
-                <span className="font-mono text-[0.6rem] text-plum-900/35">{deals.length}</span>
+            <div key={stage} className="min-w-0 rounded-[6px] bg-[var(--surface-2)] p-2">
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="eyebrow">{stage}</span>
+                <span className="mono text-[10.5px] text-[var(--text-3)]">{deals.length}</span>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {deals.map((d) => (
                   <motion.button
                     key={d.id}
@@ -185,171 +178,260 @@ function Crm({ s, act }: PaneProps) {
                     whileHover={d.stage === "Won" ? undefined : { y: -2 }}
                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                     className={cn(
-                      "block w-full rounded-lg border border-plum-900/8 bg-white p-2.5 text-left shadow-[0_1px_2px_rgba(42,29,41,0.04)]",
-                      d.stage === "Won"
-                        ? "cursor-default"
-                        : "cursor-pointer hover:border-plum-600/25",
+                      "block w-full rounded-[6px] border border-[var(--rule)] bg-[var(--surface)] p-2 text-left",
+                      d.stage === "Won" ? "cursor-default" : "cursor-pointer hover:border-[var(--accent)]",
                     )}
                   >
-                    <div className="text-[0.8rem] font-semibold text-plum-950">{d.title}</div>
-                    <div className="mt-0.5 text-[0.72rem] text-plum-900/45">{d.client}</div>
-                    <div className="mt-1.5">
-                      <Money
-                        value={d.value}
-                        currency={s.currency}
-                        className="text-[0.78rem] font-bold text-plum-700"
-                      />
-                    </div>
+                    <div className="truncate text-[12.5px] font-semibold text-[var(--ink)]">{d.title}</div>
+                    <div className="truncate text-[11.5px] text-[var(--text-3)]">{d.client}</div>
+                    <Money value={d.value} currency={s.currency} className="mt-1 block text-[12px] font-semibold text-[var(--accent)]" />
                   </motion.button>
                 ))}
                 {!deals.length && (
-                  <div className="rounded-lg border border-dashed border-plum-900/10 py-4 text-center text-[0.7rem] text-plum-900/30">
-                    Empty
-                  </div>
+                  <div className="py-3 text-center text-[11px] text-[var(--text-3)]">—</div>
                 )}
               </div>
             </div>
           );
         })}
       </div>
-    </>
+    </Card>
   );
 }
 
 /* ==========================================================================
-   Quotations — convert one and watch an invoice appear
+   Quotations — columns from pages/Quotations.jsx
    ========================================================================== */
+
+type QKey = "ref" | "client" | "project" | "status" | "total" | "date";
 
 function Quotations({ s, act }: PaneProps) {
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("");
+
+  const rows = useMemo(
+    () =>
+      s.quotes.filter(
+        (x) =>
+          (!status || x.status === status) &&
+          (!q.trim() ||
+            `${x.ref} ${x.client} ${x.project ?? ""}`.toLowerCase().includes(q.trim().toLowerCase())),
+      ),
+    [s.quotes, q, status],
+  );
+  const { sorted, sort, dir, onSort } = useSort<(typeof rows)[number], QKey>(
+    rows,
+    "ref",
+    (r, k) => (k === "total" ? r.total : (r[k] ?? "")),
+  );
+
   return (
-    <>
-      <PaneHead title="Quotations" sub={`${s.quotes.length} total quotations`} />
-      <TableWrap>
-        <thead>
-          <tr>
-            <Th>Quote #</Th>
-            <Th>Client</Th>
-            <Th>Date</Th>
-            <Th right>Amount</Th>
-            <Th>Status</Th>
-            <Th right>Actions</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {s.quotes.map((q, i) => (
-            <Row key={q.ref} i={i}>
-              <Td className="font-mono text-[0.78rem] font-semibold text-plum-900">{q.ref}</Td>
-              <Td>{q.client}</Td>
-              <Td className="text-plum-900/45">{q.date}</Td>
-              <Td right>
-                <Money value={q.total} currency={s.currency} className="font-semibold" />
-              </Td>
-              <Td>
-                <Pill status={q.status} />
-              </Td>
-              <Td right>
-                {q.status === "Converted" ? (
-                  <span className="text-[0.74rem] italic text-plum-900/30">Invoiced</span>
-                ) : (
-                  <Btn variant="primary" onClick={() => act({ type: "convertQuote", ref: q.ref })}>
-                    Convert to invoice
-                  </Btn>
-                )}
-              </Td>
-            </Row>
-          ))}
-        </tbody>
-      </TableWrap>
-      <p className="mt-3 text-[0.76rem] text-plum-900/40">
-        Converting copies the lines, the client and the tax treatment across. The invoice is
-        raised and the entry is posted in the same transaction.
-      </p>
-    </>
+    <Card
+      title="Quotations"
+      actions={
+        <>
+          <span className="text-[11.5px] text-[var(--text-3)]">{s.quotes.length} total quotations</span>
+          <Btn variant="primary">+ New Quotation</Btn>
+        </>
+      }
+    >
+      <FilterBar>
+        <Input value={q} onChange={setQ} placeholder="Search quote #, client, project, notes…" width={230} />
+        <Select
+          value={status}
+          onChange={setStatus}
+          options={[
+            { value: "", label: "All Statuses" },
+            ...["Draft", "Sent", "Accepted", "Invoiced"].map((v) => ({ value: v, label: v })),
+          ]}
+          width={140}
+        />
+      </FilterBar>
+
+      {!sorted.length ? (
+        <Empty>No quotations found.</Empty>
+      ) : (
+        <TableWrap min="50rem">
+          <thead>
+            <tr>
+              <SortableTh label="Quote #" sortKey="ref" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Client" sortKey="client" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Project" sortKey="project" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Status" sortKey="status" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Total (incl. VAT)" sortKey="total" sort={sort} dir={dir} onSort={onSort} right />
+              <th>Invoice</th>
+              <SortableTh label="Created" sortKey="date" sort={sort} dir={dir} onSort={onSort} />
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((x) => (
+              <tr key={x.ref}>
+                <td className="primary mono">{x.ref}</td>
+                <td>{x.client}</td>
+                <td>{x.project ?? "—"}</td>
+                <td>
+                  <Badge status={x.status} />
+                </td>
+                <td className="num">
+                  <Money value={x.total} currency={s.currency} />
+                </td>
+                <td className="mono text-[11.5px]">
+                  {x.invoice ? <span className="text-[var(--accent)]">→ {x.invoice}</span> : "—"}
+                </td>
+                <td className="text-[var(--text-3)]">{x.date}</td>
+                <td>
+                  {x.status === "Invoiced" ? (
+                    <span className="text-[11.5px] text-[var(--text-3)]">Invoiced</span>
+                  ) : (
+                    <Btn variant="primary" onClick={() => act({ type: "convertQuote", ref: x.ref })}>
+                      Convert to Invoice
+                    </Btn>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </TableWrap>
+      )}
+      <div className="border-t border-[var(--rule)] bg-[var(--surface-2)] px-3.5 py-2 text-[11.5px] text-[var(--text-3)]">
+        Workflow: Draft → Sent → Accepted → Convert to Invoice.
+      </div>
+    </Card>
   );
 }
 
 /* ==========================================================================
-   Invoices — record a payment, and the ledger moves
+   Invoices — columns from pages/Invoices.jsx
    ========================================================================== */
 
-const FILTERS = ["All", "Unpaid", "Paid"] as const;
+type IKey = "ref" | "quote" | "client" | "project" | "total" | "paid" | "remaining" | "status" | "due";
 
 function Invoices({ s, act }: PaneProps) {
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
-  const rows = s.invoices.filter((i) => filter === "All" || i.status === filter);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("");
+
+  const rows = useMemo(
+    () =>
+      s.invoices.filter(
+        (x) =>
+          (!status || x.status === status) &&
+          (!q.trim() ||
+            `${x.ref} ${x.quote ?? ""} ${x.client} ${x.project ?? ""}`
+              .toLowerCase()
+              .includes(q.trim().toLowerCase())),
+      ),
+    [s.invoices, q, status],
+  );
+  const { sorted, sort, dir, onSort } = useSort<(typeof rows)[number], IKey>(rows, "ref", (r, k) =>
+    k === "remaining" ? r.total - r.paid : k === "total" || k === "paid" ? r[k] : (r[k as "ref"] ?? ""),
+  );
 
   return (
-    <>
-      <PaneHead
-        title="Invoices"
-        sub={`${s.invoices.length} total invoices`}
-        actions={
-          <Segmented options={FILTERS} value={filter} onChange={setFilter} idPrefix="inv" />
-        }
-      />
-      <TableWrap>
-        <thead>
-          <tr>
-            <Th>Invoice #</Th>
-            <Th>Client</Th>
-            <Th right>Amount</Th>
-            <Th right>Remaining</Th>
-            <Th>Status</Th>
-            <Th>Due</Th>
-            <Th right>Actions</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((inv, i) => (
-            <Row key={inv.ref} i={i}>
-              <Td className="font-mono text-[0.78rem] font-semibold text-plum-900">
-                {inv.ref}
-                {inv.quote && (
-                  <span className="ml-1.5 font-normal text-plum-900/30">← {inv.quote}</span>
-                )}
-              </Td>
-              <Td>{inv.client}</Td>
-              <Td right>
-                <Money value={inv.total} currency={s.currency} className="font-semibold" />
-              </Td>
-              <Td right>
-                <Money
-                  value={round2(inv.total - inv.paid)}
-                  currency={s.currency}
-                  className={inv.status === "Unpaid" ? "text-red-600" : "text-plum-900/35"}
-                />
-              </Td>
-              <Td>
-                <Pill status={inv.status} />
-              </Td>
-              <Td className="text-plum-900/45">{inv.due}</Td>
-              <Td right>
-                {inv.status === "Unpaid" ? (
-                  <Btn variant="jade" onClick={() => act({ type: "recordPayment", ref: inv.ref })}>
-                    Record payment
-                  </Btn>
-                ) : (
-                  <span className="text-[0.74rem] italic text-plum-900/30">Settled</span>
-                )}
-              </Td>
-            </Row>
-          ))}
-          {!rows.length && (
+    <Card
+      title="Invoices"
+      actions={
+        <>
+          <span className="text-[11.5px] text-[var(--text-3)]">{s.invoices.length} total invoices</span>
+          <Btn variant="primary">+ New Invoice</Btn>
+        </>
+      }
+    >
+      <FilterBar>
+        <Input value={q} onChange={setQ} placeholder="Search invoice #, quote #, client, project…" width={240} />
+        <Select
+          value={status}
+          onChange={setStatus}
+          options={[
+            { value: "", label: "All Statuses" },
+            ...["Unpaid", "Paid", "Void"].map((v) => ({ value: v, label: v })),
+          ]}
+          width={130}
+        />
+      </FilterBar>
+
+      {!sorted.length ? (
+        <Empty>No invoices found.</Empty>
+      ) : (
+        <TableWrap min="56rem">
+          <thead>
             <tr>
-              <Td className="py-8 text-center text-plum-900/35">Nothing matches that filter.</Td>
+              <SortableTh label="Invoice #" sortKey="ref" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Quote #" sortKey="quote" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Client" sortKey="client" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Project" sortKey="project" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Amount" sortKey="total" sort={sort} dir={dir} onSort={onSort} right />
+              <SortableTh label="Paid" sortKey="paid" sort={sort} dir={dir} onSort={onSort} right />
+              <SortableTh label="Remaining" sortKey="remaining" sort={sort} dir={dir} onSort={onSort} right />
+              <SortableTh label="Status" sortKey="status" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Due Date" sortKey="due" sort={sort} dir={dir} onSort={onSort} />
+              <th>Actions</th>
             </tr>
-          )}
-        </tbody>
-      </TableWrap>
-    </>
+          </thead>
+          <tbody>
+            {sorted.map((inv) => {
+              const remaining = round2(inv.total - inv.paid);
+              return (
+                <tr key={inv.ref}>
+                  <td className="primary mono">{inv.ref}</td>
+                  <td className="mono text-[11.5px] text-[var(--text-3)]">{inv.quote ?? "—"}</td>
+                  <td>{inv.client}</td>
+                  <td>{inv.project ?? "—"}</td>
+                  <td className="num font-semibold text-[var(--ink)]">
+                    <Money value={inv.total} currency={s.currency} />
+                  </td>
+                  <td className="num" style={{ color: "var(--affirm)" }}>
+                    <Money value={inv.paid} currency={s.currency} />
+                  </td>
+                  <td
+                    className="num font-semibold"
+                    style={{ color: remaining > 0 ? "var(--negate)" : "var(--affirm)" }}
+                  >
+                    <Money value={remaining} currency={s.currency} />
+                  </td>
+                  <td>
+                    <Badge status={inv.status} />
+                  </td>
+                  <td className="text-[var(--text-3)]">{inv.due}</td>
+                  <td>
+                    {inv.status === "Unpaid" ? (
+                      <Btn variant="success" onClick={() => act({ type: "recordPayment", ref: inv.ref })}>
+                        Record Payment
+                      </Btn>
+                    ) : (
+                      <span className="text-[11.5px] text-[var(--text-3)]">—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </TableWrap>
+      )}
+    </Card>
   );
 }
 
 /* ==========================================================================
-   Point of Sale — a register wired to stock and the ledger
+   Point of Sale — the Register view, from pages/pos/RegisterView.jsx
    ========================================================================== */
 
 function Pos({ s, act }: PaneProps) {
+  const [q, setQ] = useState("");
+  const [cat, setCat] = useState("");
+
+  const categories = useMemo(() => {
+    const c = new Map<string, number>();
+    for (const p of s.products) c.set(p.category, (c.get(p.category) ?? 0) + 1);
+    return [...c.entries()].sort((a, b) => b[1] - a[1]);
+  }, [s.products]);
+
+  const visible = s.products.filter(
+    (p) =>
+      (!cat || p.category === cat) &&
+      (!q.trim() || p.name.toLowerCase().includes(q.trim().toLowerCase()) || p.sku.toLowerCase().includes(q.trim().toLowerCase())),
+  );
+
   const gross = round2(
     s.cart.reduce((t, c) => {
       const p = s.products.find((x) => x.sku === c.sku);
@@ -359,378 +441,527 @@ function Pos({ s, act }: PaneProps) {
   const { net, vat } = splitVat(gross);
 
   return (
-    <>
-      <PaneHead title="Point of Sale" sub="Shelf prices include VAT · tap to add" />
-      <div className="grid gap-3 lg:grid-cols-[1fr_15rem]">
-        <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-          {s.products.map((p) => {
-            const out = p.stock === 0;
-            return (
-              <motion.button
-                key={p.sku}
-                type="button"
-                onClick={() => act({ type: "cartAdd", sku: p.sku })}
-                disabled={out}
-                whileHover={out ? undefined : { y: -3 }}
-                whileTap={out ? undefined : { scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 460, damping: 30 }}
-                className={cn(
-                  "rounded-xl border border-plum-900/8 bg-white p-3 text-left shadow-[0_1px_2px_rgba(42,29,41,0.04)]",
-                  out
-                    ? "cursor-not-allowed opacity-45"
-                    : "cursor-pointer hover:border-plum-600/25",
-                )}
-              >
-                {/* Fixed height: without it, only the cards carrying a stock
-                    pill are pushed down and the product names in a row stop
-                    sharing a baseline. */}
-                <div className="flex min-h-[22px] items-start justify-between gap-2">
-                  <span className="font-mono text-[0.55rem] uppercase tracking-[0.1em] text-plum-900/35">
-                    {p.sku}
-                  </span>
-                  {p.stock <= p.reorder && <Pill status={out ? "Out" : "Low"} />}
-                </div>
-                <div className="mt-1.5 text-[0.85rem] font-semibold leading-tight text-plum-950">
-                  {p.name}
-                </div>
-                <div className="mt-1.5 flex items-baseline justify-between">
-                  <Money
-                    value={p.price}
-                    currency={s.currency}
-                    className="text-[0.82rem] font-bold text-plum-700"
-                  />
-                  <span className="font-mono text-[0.66rem] text-plum-900/40">{p.stock} left</span>
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
+    <div className="grid min-w-0 gap-2 lg:grid-cols-[1fr_16rem]">
+      <Card
+        title="Register"
+        className="min-w-0"
+        actions={
+          <span className="text-[11.5px] text-[var(--text-3)]">
+            Session open · Cashier: admin
+          </span>
+        }
+      >
+        <FilterBar>
+          <Input value={q} onChange={setQ} placeholder="Scan barcode or search items…" width={220} />
+          <button
+            type="button"
+            onClick={() => setCat("")}
+            className={cn(
+              "erp-badge cursor-pointer",
+              !cat ? "erp-badge-purple" : "erp-badge-gray",
+            )}
+          >
+            All
+          </button>
+          {categories.map(([c, n]) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCat(c)}
+              className={cn(
+                "erp-badge cursor-pointer",
+                cat === c ? "erp-badge-purple" : "erp-badge-gray",
+              )}
+            >
+              {c} · {n}
+            </button>
+          ))}
+        </FilterBar>
 
-        <Card className="flex h-max flex-col">
-          <div className="mb-2 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-plum-900/40">
-            Current sale
-          </div>
-          {!s.cart.length && (
-            <p className="py-6 text-center text-[0.76rem] text-plum-900/30">
-              Tap a product to start.
-            </p>
-          )}
-          <ul className="space-y-1.5">
-            {s.cart.map((c) => {
-              const p = s.products.find((x) => x.sku === c.sku)!;
+        {!visible.length ? (
+          <Empty>No matching items.</Empty>
+        ) : (
+          <div className="grid grid-cols-2 gap-1.5 p-2.5 sm:grid-cols-3 xl:grid-cols-4">
+            {visible.map((p) => {
+              const out = p.stock === 0;
               return (
-                <motion.li
-                  key={c.sku}
-                  layout
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.25, ease: EASE }}
-                  className="flex items-center gap-1.5 text-[0.78rem]"
+                <motion.button
+                  key={p.sku}
+                  type="button"
+                  onClick={() => act({ type: "cartAdd", sku: p.sku })}
+                  disabled={out}
+                  whileHover={out ? undefined : { y: -2 }}
+                  whileTap={out ? undefined : { scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 460, damping: 30 }}
+                  className={cn(
+                    "min-w-0 rounded-[6px] border border-[var(--rule)] bg-[var(--surface)] p-2 text-left",
+                    out ? "cursor-not-allowed opacity-45" : "cursor-pointer hover:border-[var(--accent)]",
+                  )}
                 >
-                  <span className="min-w-0 flex-1 truncate text-plum-900/75">{p.name}</span>
-                  <button
-                    type="button"
-                    aria-label={`Remove one ${p.name}`}
-                    onClick={() => act({ type: "cartSub", sku: c.sku })}
-                    className="flex h-5 w-5 cursor-pointer items-center justify-center rounded-md border border-plum-900/12 text-plum-900/50 hover:border-plum-600/30 hover:text-plum-700"
-                  >
-                    <Icon name="minus" className="h-3 w-3" />
-                  </button>
-                  <span className="w-5 text-center font-mono font-bold text-plum-900">{c.qty}</span>
-                  <Money
-                    value={round2(p.price * c.qty)}
-                    currency={s.currency}
-                    className="w-20 text-right text-[0.76rem] font-semibold"
-                  />
-                </motion.li>
+                  <div className="flex min-h-[17px] items-start justify-between gap-1">
+                    <span className="mono truncate text-[10px] text-[var(--text-3)]">{p.sku}</span>
+                    {p.stock <= p.reorder && <Badge status={out ? "Void" : "Low"}>{out ? "Out" : "Low"}</Badge>}
+                  </div>
+                  <div className="mt-0.5 truncate text-[12.5px] font-semibold text-[var(--ink)]">{p.name}</div>
+                  <div className="mt-1 flex items-baseline justify-between gap-1">
+                    <Money value={p.price} currency={s.currency} className="text-[12px] font-semibold text-[var(--accent)]" />
+                    <span className="mono shrink-0 text-[10.5px] text-[var(--text-3)]">{p.stock} in stock</span>
+                  </div>
+                </motion.button>
               );
             })}
-          </ul>
+          </div>
+        )}
+      </Card>
+
+      <Card title="Cart" className="h-max min-w-0">
+        <div className="p-2.5">
+          {!s.cart.length ? (
+            <p className="py-5 text-center text-[11.5px] text-[var(--text-3)]">
+              Cart is empty. Scan or search to add items.
+            </p>
+          ) : (
+            <ul className="space-y-1">
+              {s.cart.map((c) => {
+                const p = s.products.find((x) => x.sku === c.sku)!;
+                return (
+                  <motion.li
+                    key={c.sku}
+                    layout
+                    initial={{ opacity: 0, x: 6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.22, ease: EASE }}
+                    className="flex items-center gap-1 text-[12px]"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-[var(--text-2)]">{p.name}</span>
+                    <button
+                      type="button"
+                      aria-label={`Remove one ${p.name}`}
+                      onClick={() => act({ type: "cartSub", sku: c.sku })}
+                      className="flex h-[18px] w-[18px] shrink-0 cursor-pointer items-center justify-center rounded-[4px] border border-[var(--rule-strong)] text-[var(--text-3)] hover:text-[var(--accent)]"
+                    >
+                      −
+                    </button>
+                    <span className="mono w-4 shrink-0 text-center font-semibold text-[var(--ink)]">{c.qty}</span>
+                    <Money value={round2(p.price * c.qty)} currency={s.currency} className="w-[74px] shrink-0 text-right text-[11.5px] font-semibold text-[var(--ink)]" />
+                  </motion.li>
+                );
+              })}
+            </ul>
+          )}
 
           {s.cart.length > 0 && (
             <>
-              <div className="mt-3 space-y-1 border-t border-plum-900/8 pt-2.5 text-[0.76rem]">
-                <div className="flex justify-between text-plum-900/50">
-                  <span>Net</span>
-                  <Money value={net} currency={s.currency} />
-                </div>
-                <div className="flex justify-between text-plum-900/50">
-                  <span>VAT {Math.round(VAT_RATE * 100)}%</span>
-                  <Money value={vat} currency={s.currency} />
-                </div>
-                <div className="flex justify-between pt-1 text-[0.9rem] font-bold text-plum-950">
+              <div className="mt-2.5 space-y-1 border-t border-[var(--rule)] pt-2 text-[12px]">
+                <Line label="Subtotal" value={net} currency={s.currency} />
+                <Line label={`Tax (${Math.round(VAT_RATE * 100)}%)`} value={vat} currency={s.currency} />
+                <div className="flex items-baseline justify-between pt-0.5 text-[14px] font-bold text-[var(--ink)]">
                   <span>Total</span>
                   <Money value={gross} currency={s.currency} />
                 </div>
+                <div className="pt-0.5 text-[10.5px] text-[var(--text-3)]">Prices include VAT</div>
               </div>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-2.5 flex gap-1.5">
                 <Btn variant="primary" onClick={() => act({ type: "checkout" })}>
-                  Complete sale
+                  Complete Sale
                 </Btn>
                 <Btn onClick={() => act({ type: "cartClear" })}>Clear</Btn>
               </div>
             </>
           )}
-        </Card>
-      </div>
-    </>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function Line({ label, value, currency }: { label: string; value: number; currency: "USD" | "LBP" }) {
+  return (
+    <div className="flex items-baseline justify-between text-[var(--text-2)]">
+      <span>{label}</span>
+      <Money value={value} currency={currency} />
+    </div>
   );
 }
 
 /* ==========================================================================
-   Inventory
+   Inventory — columns from pages/Inventory.jsx
    ========================================================================== */
+
+type NKey = "name" | "category" | "type" | "stock" | "reorder" | "cost" | "supplier";
 
 function Inventory({ s }: PaneProps) {
-  const value = round2(s.products.reduce((t, p) => t + p.price * p.stock, 0));
+  const [q, setQ] = useState("");
+  const [cat, setCat] = useState("");
+  const rows = useMemo(
+    () =>
+      s.products.filter(
+        (p) =>
+          (!cat || p.category === cat) &&
+          (!q.trim() || `${p.name} ${p.supplier}`.toLowerCase().includes(q.trim().toLowerCase())),
+      ),
+    [s.products, q, cat],
+  );
+  const { sorted, sort, dir, onSort } = useSort<(typeof rows)[number], NKey>(rows, "name", (r, k) => r[k]);
+  const total = round2(sorted.reduce((t, p) => t + p.cost * p.stock, 0));
+  const cats = [...new Set(s.products.map((p) => p.category))];
+
   return (
-    <>
-      <PaneHead
-        title="Inventory"
-        sub={`${s.products.length} products · stock drawn automatically on every sale`}
-        actions={
-          <span className="font-mono text-[0.7rem] text-plum-900/40">
-            Stock value{" "}
-            <Money className="font-bold text-plum-800" value={value} currency={s.currency} />
-          </span>
-        }
-      />
-      <TableWrap>
-        <thead>
-          <tr>
-            <Th>SKU</Th>
-            <Th>Product</Th>
-            <Th right>Price</Th>
-            <Th right>On hand</Th>
-            <Th right>Reorder at</Th>
-            <Th>Level</Th>
-            <Th>Status</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {s.products.map((p, i) => {
-            const status = p.stock === 0 ? "Out" : p.stock <= p.reorder ? "Low" : "In stock";
-            return (
-              <Row key={p.sku} i={i}>
-                <Td className="font-mono text-[0.76rem] text-plum-900/60">{p.sku}</Td>
-                <Td className="font-semibold text-plum-950">{p.name}</Td>
-                <Td right>
-                  <Money value={p.price} currency={s.currency} />
-                </Td>
-                <Td right className="font-mono font-bold text-plum-900">
-                  {p.stock}
-                </Td>
-                <Td right className="text-plum-900/40">
-                  {p.reorder}
-                </Td>
-                <Td className="w-28">
-                  <Bar
-                    pct={(p.stock / Math.max(p.reorder * 3, 1)) * 100}
-                    tone={status === "In stock" ? "jade" : status === "Low" ? "gold" : "plum"}
-                  />
-                </Td>
-                <Td>
-                  <Pill status={status} />
-                </Td>
-              </Row>
-            );
-          })}
-        </tbody>
-      </TableWrap>
-    </>
+    <Card
+      title="Inventory"
+      actions={
+        <>
+          <span className="text-[11.5px] text-[var(--text-3)]">{s.products.length} items</span>
+          <Btn variant="primary">+ Add Item</Btn>
+        </>
+      }
+    >
+      <FilterBar>
+        <Input value={q} onChange={setQ} placeholder="Search name or supplier…" width={200} />
+        <Select
+          value={cat}
+          onChange={setCat}
+          options={[{ value: "", label: "All Categories" }, ...cats.map((c) => ({ value: c, label: c }))]}
+          width={160}
+        />
+      </FilterBar>
+
+      {!sorted.length ? (
+        <Empty>No items match your filters.</Empty>
+      ) : (
+        <TableWrap min="52rem">
+          <thead>
+            <tr>
+              <SortableTh label="Item Name" sortKey="name" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Category" sortKey="category" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Type" sortKey="type" sort={sort} dir={dir} onSort={onSort} />
+              <SortableTh label="Stock" sortKey="stock" sort={sort} dir={dir} onSort={onSort} right />
+              <SortableTh label="Min Stock" sortKey="reorder" sort={sort} dir={dir} onSort={onSort} right />
+              <SortableTh label="Unit Cost" sortKey="cost" sort={sort} dir={dir} onSort={onSort} right />
+              <th className="text-right">Total Value</th>
+              <SortableTh label="Supplier" sortKey="supplier" sort={sort} dir={dir} onSort={onSort} />
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((p) => {
+              const status = p.stock === 0 ? "Void" : p.stock <= p.reorder ? "Low" : "OK";
+              return (
+                <tr key={p.sku}>
+                  <td className="primary">{p.name}</td>
+                  <td className="text-[var(--text-3)]">{p.category}</td>
+                  <td className="text-[var(--text-3)]">{p.type}</td>
+                  <td className="num font-semibold text-[var(--ink)]">{p.stock}</td>
+                  <td className="num text-[var(--text-3)]">{p.reorder}</td>
+                  <td className="num">
+                    <Money value={p.cost} currency={s.currency} />
+                  </td>
+                  <td className="num">
+                    <Money value={round2(p.cost * p.stock)} currency={s.currency} />
+                  </td>
+                  <td className="text-[var(--text-3)]">{p.supplier}</td>
+                  <td>
+                    <Badge status={status}>{status === "Void" ? "Out of stock" : status}</Badge>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan={6} className="text-right">
+                Stock value
+              </td>
+              <td className="num">
+                <Money value={total} currency={s.currency} />
+              </td>
+              <td colSpan={2} />
+            </tr>
+          </tfoot>
+        </TableWrap>
+      )}
+    </Card>
   );
 }
 
 /* ==========================================================================
-   Manufacturing
+   Manufacturing — Production Orders + Bills of Materials tabs
    ========================================================================== */
 
-function Manufacturing({ s }: PaneProps) {
+function Manufacturing({ s, tab }: PaneProps) {
   const unit = round2(BOM.reduce((t, b) => t + b.cost, 0));
-  return (
-    <>
-      <PaneHead title="Manufacturing" sub="Bills of materials, runs and real cost" />
-      <div className="grid gap-3 lg:grid-cols-[1.3fr_1fr]">
-        {/* min-w-0: a grid child defaults to min-width:auto, so this would
-            stretch to the table's 42rem min-content and defeat the
-            scroller inside TableWrap. */}
-        <div className="min-w-0">
-          <TableWrap>
+
+  if (tab === 1) {
+    return (
+      <Card title="Bills of Materials" actions={<Btn variant="primary">+ New BOM</Btn>}>
+        <div className="p-3">
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+            <span className="text-[13px] font-semibold text-[var(--ink)]">Product Alpha</span>
+            <span className="flex items-center gap-1.5">
+              <Badge status="Active">BOM v3</Badge>
+              <span className="text-[11.5px] text-[var(--text-3)]">Batch yield 120 units</span>
+            </span>
+          </div>
+          <TableWrap min="30rem">
             <thead>
               <tr>
-                <Th>Order #</Th>
-                <Th>Product</Th>
-                <Th right>Qty</Th>
-                <Th>Progress</Th>
-                <Th>State</Th>
+                <th>Component</th>
+                <th className="text-right">Qty</th>
+                <th className="text-right">Cost</th>
               </tr>
             </thead>
             <tbody>
-              {ORDERS.map((o, i) => (
-                <Row key={o.ref} i={i}>
-                  <Td className="font-mono text-[0.78rem] font-semibold text-plum-900">{o.ref}</Td>
-                  <Td>{o.product}</Td>
-                  <Td right className="font-mono">
-                    {o.qty}
-                  </Td>
-                  <Td className="w-32">
-                    <Bar pct={o.pct} tone={o.state === "QC hold" ? "gold" : "plum"} />
-                  </Td>
-                  <Td>
-                    <Pill status={o.state} />
-                  </Td>
-                </Row>
+              {BOM.map((b) => (
+                <tr key={b.item}>
+                  <td className="primary">{b.item}</td>
+                  <td className="num text-[var(--text-3)]">{b.qty}</td>
+                  <td className="num">
+                    <Money value={b.cost} currency={s.currency} />
+                  </td>
+                </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={2} className="text-right">
+                  Cost per unit
+                </td>
+                <td className="num">
+                  <Money value={unit} currency={s.currency} />
+                </td>
+              </tr>
+            </tfoot>
           </TableWrap>
-        </div>
-
-        <Card>
-          <div className="mb-3 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-plum-900/40">
-            Bill of materials · Product Alpha
-          </div>
-          <ul className="space-y-2">
-            {BOM.map((b) => (
-              <li key={b.item} className="flex items-baseline justify-between text-[0.8rem]">
-                <span className="text-plum-900/70">{b.item}</span>
-                <span className="flex items-baseline gap-3">
-                  <span className="font-mono text-[0.72rem] text-plum-900/40">{b.qty}</span>
-                  <Money value={b.cost} currency={s.currency} className="w-20 text-right" />
-                </span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-3 flex items-baseline justify-between border-t border-plum-900/8 pt-2.5">
-            <span className="text-[0.82rem] font-bold text-plum-950">Cost per unit</span>
-            <Money
-              value={unit}
-              currency={s.currency}
-              className="text-[0.92rem] font-bold text-plum-700"
-            />
-          </div>
-          <p className="mt-2.5 text-[0.72rem] leading-relaxed text-plum-900/40">
-            Overhead is priced from the hours the run actually took, not a standard rate.
+          <p className="mt-2 text-[11.5px] text-[var(--text-3)]">
+            Overhead = Σ(hourly rates) × actual production hours — not a standard rate.
           </p>
-        </Card>
-      </div>
-    </>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card title="Production Orders" actions={<Btn variant="primary">+ New Production Order</Btn>}>
+      <TableWrap min="48rem">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Product</th>
+            <th className="text-right">Qty</th>
+            <th>Priority</th>
+            <th>Due Date</th>
+            <th>Progress</th>
+            <th>Status</th>
+            <th className="text-right">Total Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ORDERS.map((o) => (
+            <tr key={o.ref}>
+              <td className="primary mono">{o.ref}</td>
+              <td>{o.product}</td>
+              <td className="num">{o.qty}</td>
+              <td className="text-[var(--text-3)]">{o.priority}</td>
+              <td className="text-[var(--text-3)]">{o.due}</td>
+              <td className="w-24">
+                <Bar pct={o.pct} tone={o.state === "On Hold" ? "caution" : o.state === "Completed" ? "affirm" : "accent"} />
+              </td>
+              <td>
+                <Badge status={o.state} />
+              </td>
+              <td className="num">
+                <Money value={o.cost} currency={s.currency} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </TableWrap>
+    </Card>
   );
 }
 
 /* ==========================================================================
-   Accounting — the proof that everything above tied out
+   Accounting — Journal + Trial Balance, from pages/accounting/
    ========================================================================== */
 
-function Accounting({ s }: PaneProps) {
+function Accounting({ s, tab }: PaneProps) {
+  const [source, setSource] = useState("");
+  const [q, setQ] = useState("");
   const tb = trialBalance(s.journal);
   const balanced = Math.abs(tb.dr - tb.cr) < 0.005;
 
+  if (tab === 1) {
+    /* Trial Balance — the footer reports balanced/not balanced against the
+       filtered rows, exactly as accounting/TrialBalance.jsx does. */
+    return (
+      <Card title="Trial Balance" actions={<span className="text-[11.5px] text-[var(--text-3)]">As of Jul 31, 2026</span>}>
+        <TableWrap min="34rem">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Name</th>
+              <th className="text-right">Debit</th>
+              <th className="text-right">Credit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tb.rows.map((r) => {
+              const [code, ...name] = r.account.split(" · ");
+              return (
+                <tr key={r.account}>
+                  <td className="mono">{code}</td>
+                  <td className="primary">{name.join(" · ")}</td>
+                  <td className="num">
+                    <Money value={r.dr} currency={s.currency} blankIfZero />
+                  </td>
+                  <td className="num">
+                    <Money value={r.cr} currency={s.currency} blankIfZero />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan={2} className="text-right" style={{ color: balanced ? "var(--affirm)" : "var(--negate)" }}>
+                {balanced ? "✓ Balanced" : "⚠ Not balanced"}
+              </td>
+              <td className="num">
+                <Money value={tb.dr} currency={s.currency} />
+              </td>
+              <td className="num">
+                <Money value={tb.cr} currency={s.currency} />
+              </td>
+            </tr>
+          </tfoot>
+        </TableWrap>
+      </Card>
+    );
+  }
+
+  const rows = s.journal.filter(
+    (j) =>
+      (!source || j.source === source) &&
+      (!q.trim() || `${j.ref} ${j.memo}`.toLowerCase().includes(q.trim().toLowerCase())),
+  );
+  const sources = [...new Set(s.journal.map((j) => j.source))];
+
+  /* Journal full width with the entry detail beneath it, rather than side by
+     side: the real application opens a line detail as a modal over the
+     full-width table, and squeezing an eight-column grid into a 1.55fr column
+     clipped Debit, Credit and Status behind the scroller at 1600px. */
   return (
-    <>
-      <PaneHead
-        title="Accounting"
-        sub={`${s.journal.length} journal entries · posted automatically`}
-        actions={
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[0.74rem] font-semibold",
-              balanced
-                ? "border-jade-500/25 bg-jade-500/10 text-jade-700"
-                : "border-red-500/25 bg-red-500/8 text-red-600",
-            )}
-          >
-            <Icon name="check" className="h-3 w-3" />
-            {balanced ? "Trial balance ties out" : "Out of balance"}
-          </span>
-        }
-      />
+    <div className="min-w-0 space-y-2">
+      <Card
+        title="Journal"
+        className="min-w-0"
+        actions={<Btn variant="primary">＋ New Entry</Btn>}
+      >
+        <FilterBar>
+          <Select
+            value={source}
+            onChange={setSource}
+            options={[{ value: "", label: "All Sources" }, ...sources.map((x) => ({ value: x, label: x }))]}
+            width={150}
+          />
+          <Input value={q} onChange={setQ} placeholder="Search entries…" width={180} />
+        </FilterBar>
 
-      <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
-        <div className="min-w-0 space-y-2">
-          {s.journal.map((j, i) => (
-            <motion.div
-              key={j.ref}
-              layout
-              initial={j.fresh ? { opacity: 0, y: -10 } : false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: EASE, delay: Math.min(i, 6) * 0.03 }}
-              className={cn(
-                "rounded-xl border bg-white p-3",
-                j.fresh ? "border-jade-500/35 bg-jade-500/[0.04]" : "border-plum-900/8",
-              )}
-            >
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="font-mono text-[0.76rem] font-bold text-plum-900">{j.ref}</span>
-                <span className="text-[0.72rem] text-plum-900/40">
-                  {j.date} · from {j.source}
-                </span>
-              </div>
-              <div className="mt-0.5 text-[0.78rem] text-plum-900/60">{j.memo}</div>
-              <div className="mt-2 space-y-1">
-                {j.lines.map((l, n) => (
-                  <div key={n} className="flex items-baseline justify-between text-[0.76rem]">
-                    <span className="font-mono text-plum-900/55">{l.account}</span>
-                    <span className="flex gap-4">
-                      <Money
-                        value={l.dr}
-                        currency={s.currency}
-                        className={cn("w-24 text-right", l.dr ? "text-plum-900" : "text-plum-900/15")}
-                      />
-                      <Money
-                        value={l.cr}
-                        currency={s.currency}
-                        className={cn("w-24 text-right", l.cr ? "text-plum-900" : "text-plum-900/15")}
-                      />
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          ))}
+        {!rows.length ? (
+          <Empty>No entries found.</Empty>
+        ) : (
+          <TableWrap min="40rem">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Memo</th>
+                <th>Source</th>
+                <th className="text-right">Debit</th>
+                <th className="text-right">Credit</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((j) => {
+                const d = round2(j.lines.reduce((t, l) => t + l.dr, 0));
+                const c = round2(j.lines.reduce((t, l) => t + l.cr, 0));
+                return (
+                  <motion.tr
+                    key={j.ref}
+                    initial={j.fresh ? { backgroundColor: "rgba(31,163,98,0.16)" } : false}
+                    animate={{ backgroundColor: "rgba(31,163,98,0)" }}
+                    transition={{ duration: 2.2, ease: "easeOut" }}
+                  >
+                    <td className="mono">{j.ref}</td>
+                    <td className="text-[var(--text-3)]">{j.date}</td>
+                    <td className="primary">{j.memo}</td>
+                    <td>
+                      <Badge status="Draft">{j.source}</Badge>
+                    </td>
+                    <td className="num font-semibold text-[var(--ink)]">
+                      <Money value={d} currency={s.currency} />
+                    </td>
+                    <td className="num font-semibold text-[var(--ink)]">
+                      <Money value={c} currency={s.currency} />
+                    </td>
+                    <td>
+                      <Badge status="posted">posted</Badge>
+                    </td>
+                  </motion.tr>
+                );
+              })}
+            </tbody>
+          </TableWrap>
+        )}
+      </Card>
+
+      {/* Entry detail — the lines behind whichever entry is newest. */}
+      <Card title={`${s.journal[0]?.ref ?? ""} · lines`} className="h-max min-w-0 lg:max-w-2xl">
+        <TableWrap min="0">
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th className="text-right">Debit</th>
+              <th className="text-right">Credit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(s.journal[0]?.lines ?? []).map((l, i) => {
+              const [code, ...name] = l.account.split(" · ");
+              return (
+                <tr key={i}>
+                  <td>
+                    <span className="mono">{code}</span>{" "}
+                    <span className="text-[var(--text-3)]">{name.join(" · ")}</span>
+                  </td>
+                  <td className="num">
+                    <Money value={l.dr} currency={s.currency} blankIfZero />
+                  </td>
+                  <td className="num">
+                    <Money value={l.cr} currency={s.currency} blankIfZero />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td className="text-right">Σ</td>
+              <td className="num">
+                <Money value={round2((s.journal[0]?.lines ?? []).reduce((t, l) => t + l.dr, 0))} currency={s.currency} />
+              </td>
+              <td className="num">
+                <Money value={round2((s.journal[0]?.lines ?? []).reduce((t, l) => t + l.cr, 0))} currency={s.currency} />
+              </td>
+            </tr>
+          </tfoot>
+        </TableWrap>
+        <div className="border-t border-[var(--rule)] bg-[var(--surface-2)] px-3.5 py-2 text-[11.5px] text-[var(--text-3)]">
+          Corrections post a reversing entry — nothing is deleted.
         </div>
-
-        <Card className="h-max">
-          <div className="mb-3 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-plum-900/40">
-            Trial balance
-          </div>
-          <div className="mb-1.5 flex justify-between font-mono text-[0.55rem] uppercase tracking-[0.1em] text-plum-900/30">
-            <span>Account</span>
-            <span className="flex gap-4">
-              <span className="w-20 text-right">Debit</span>
-              <span className="w-20 text-right">Credit</span>
-            </span>
-          </div>
-          {tb.rows.map((r) => (
-            <div key={r.account} className="flex justify-between py-1 text-[0.75rem]">
-              <span className="font-mono text-plum-900/60">{r.account}</span>
-              <span className="flex gap-4">
-                <Money
-                  value={r.dr}
-                  currency={s.currency}
-                  className={cn("w-20 text-right", r.dr ? "text-plum-900" : "text-plum-900/15")}
-                />
-                <Money
-                  value={r.cr}
-                  currency={s.currency}
-                  className={cn("w-20 text-right", r.cr ? "text-plum-900" : "text-plum-900/15")}
-                />
-              </span>
-            </div>
-          ))}
-          <div className="mt-2 flex justify-between border-t border-plum-900/10 pt-2 text-[0.8rem] font-bold text-plum-950">
-            <span>Totals</span>
-            <span className="flex gap-4">
-              <Money value={tb.dr} currency={s.currency} className="w-20 text-right" />
-              <Money value={tb.cr} currency={s.currency} className="w-20 text-right" />
-            </span>
-          </div>
-          <p className="mt-2.5 text-[0.72rem] leading-relaxed text-plum-900/40">
-            Both columns are summed independently. They agree because every entry above was
-            written by the system, not by a person.
-          </p>
-        </Card>
-      </div>
-    </>
+      </Card>
+    </div>
   );
 }
 
@@ -738,64 +969,115 @@ function Accounting({ s }: PaneProps) {
    Reports
    ========================================================================== */
 
-function Reports({ s }: PaneProps) {
+function Reports({ s, tab }: PaneProps) {
   const revenue = revenueOf(s.journal);
   const vat = vatOf(s.journal);
-  const atRisk = AGING.filter((a) => a.tone !== "ok").reduce((t, a) => t + a.amount, 0);
+
+  if (tab === 1) {
+    const atRisk = AGING.filter((a) => a.tone !== "ok").reduce((t, a) => t + a.amount, 0);
+    const total = AGING.reduce((t, a) => t + a.amount, 0);
+    return (
+      <Card title="Invoice Aging" actions={<Btn>Export Excel</Btn>}>
+        <TableWrap min="30rem">
+          <thead>
+            <tr>
+              <th>Bucket</th>
+              <th className="text-right">Amount</th>
+              <th>Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            {AGING.map((a) => (
+              <tr key={a.bucket}>
+                <td className="primary">{a.bucket}</td>
+                <td className="num">
+                  <Money value={a.amount} currency={s.currency} />
+                </td>
+                <td className="w-32">
+                  <Bar pct={(a.amount / total) * 100} tone={a.tone === "ok" ? "affirm" : a.tone === "warn" ? "caution" : "accent"} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td className="text-right" style={{ color: "var(--negate)" }}>
+                At risk
+              </td>
+              <td className="num">
+                <Money value={round2(atRisk)} currency={s.currency} />
+              </td>
+              <td />
+            </tr>
+          </tfoot>
+        </TableWrap>
+      </Card>
+    );
+  }
 
   return (
-    <>
-      <PaneHead title="Reports" sub="Answers, without exporting to a spreadsheet" />
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Card>
-          <div className="mb-3 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-plum-900/40">
-            VAT summary · this period
-          </div>
-          <div className="space-y-2 text-[0.82rem]">
-            <div className="flex justify-between">
-              <span className="text-plum-900/55">Net sales</span>
-              <Money value={round2(revenue)} currency={s.currency} className="font-semibold" />
-            </div>
-            <div className="flex justify-between">
-              <span className="text-plum-900/55">Output VAT collected</span>
-              <Money value={vat} currency={s.currency} className="font-semibold text-plum-700" />
-            </div>
-            <div className="flex justify-between border-t border-plum-900/8 pt-2 font-bold text-plum-950">
-              <span>Payable to authority</span>
-              <Money value={vat} currency={s.currency} />
-            </div>
-          </div>
-          <p className="mt-3 text-[0.72rem] text-plum-900/40">
-            Extracted from tax-inclusive shelf prices at {Math.round(VAT_RATE * 100)}%, per line,
-            as each sale posted.
-          </p>
-        </Card>
+    <div className="grid min-w-0 gap-2 lg:grid-cols-2">
+      <Card title="VAT Report" actions={<Btn>Export Excel</Btn>}>
+        <TableWrap min="0">
+          <tbody>
+            <tr>
+              <td className="primary">Net sales</td>
+              <td className="num">
+                <Money value={revenue} currency={s.currency} />
+              </td>
+            </tr>
+            <tr>
+              <td className="primary">Output VAT collected</td>
+              <td className="num" style={{ color: "var(--accent)" }}>
+                <Money value={vat} currency={s.currency} />
+              </td>
+            </tr>
+            <tr>
+              <td className="primary">Input VAT</td>
+              <td className="num">
+                <Money value={0} currency={s.currency} blankIfZero />
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td className="text-right">Payable to authority</td>
+              <td className="num">
+                <Money value={vat} currency={s.currency} />
+              </td>
+            </tr>
+          </tfoot>
+        </TableWrap>
+        <div className="border-t border-[var(--rule)] bg-[var(--surface-2)] px-3.5 py-2 text-[11.5px] text-[var(--text-3)]">
+          Extracted per line at {Math.round(VAT_RATE * 100)}% from tax-inclusive prices, as each sale posted.
+        </div>
+      </Card>
 
-        <Card>
-          <div className="mb-3 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-plum-900/40">
-            Invoice aging
-          </div>
-          <div className="space-y-2.5">
-            {AGING.map((a) => (
-              <div key={a.bucket}>
-                <div className="mb-1 flex justify-between text-[0.78rem]">
-                  <span className="text-plum-900/55">{a.bucket}</span>
-                  <Money value={a.amount} currency={s.currency} className="font-semibold" />
-                </div>
-                <Bar
-                  pct={(a.amount / 12480.4) * 100}
-                  tone={a.tone === "ok" ? "jade" : a.tone === "warn" ? "gold" : "plum"}
-                />
-              </div>
+      <Card title="Monthly Breakdown">
+        <TableWrap min="0">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th className="text-right">Income</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            {REVENUE_BY_MONTH.map((r) => (
+              <tr key={r.m}>
+                <td className="primary">{r.m} 2026</td>
+                <td className="num">
+                  <Money value={r.v} currency={s.currency} />
+                </td>
+                <td className="w-24">
+                  <Bar pct={(r.v / 23341) * 100} tone="accent" />
+                </td>
+              </tr>
             ))}
-          </div>
-          <div className="mt-3 flex justify-between border-t border-plum-900/8 pt-2 text-[0.8rem] font-bold text-plum-950">
-            <span>At risk</span>
-            <Money value={round2(atRisk)} currency={s.currency} className="text-gold-700" />
-          </div>
-        </Card>
-      </div>
-    </>
+          </tbody>
+        </TableWrap>
+      </Card>
+    </div>
   );
 }
 
@@ -817,7 +1099,7 @@ export const PANE_HINTS: Record<ModuleKey, string> = {
   dashboard: "Every figure here is summed from entries the other modules posted.",
   crm: "Click a deal card to advance its stage.",
   quotations: "Convert a quotation — an invoice is raised and the entry posts itself.",
-  invoices: "Record a payment — then open Accounting.",
+  invoices: "Record a payment, then open Accounting.",
   pos: "Ring up a sale. Stock falls and the ledger moves in the same transaction.",
   inventory: "Sell something in Point of Sale and watch these numbers drop.",
   manufacturing: "Overhead is costed from the hours a run actually took.",

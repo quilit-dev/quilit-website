@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Instrument_Sans, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Inter, Instrument_Sans, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 /* Instrument Sans carries the whole UI — confident, tight, modern grotesque.
@@ -25,6 +25,15 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+/* Inter is the ERP's own UI face. It is loaded only so the embedded product
+   demo can render in the application's real typeface rather than the site's —
+   nothing outside `.erp` uses it. */
+const erpSans = Inter({
+  variable: "--font-erp-var",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Quilit ERP — Everything your business runs on, in one system",
   description:
@@ -43,7 +52,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${sans.variable} ${serif.variable} ${mono.variable} antialiased`}
+      className={`${sans.variable} ${serif.variable} ${mono.variable} ${erpSans.variable} antialiased`}
     >
       <body>{children}</body>
     </html>
