@@ -2,7 +2,8 @@
 
 import React, { useRef } from "react";
 import { motion, useScroll, useTransform, useReducedMotion } from "motion/react";
-import { Reveal, Eyebrow, Cta, ArrowRight, Icon } from "@/components/ui/primitives";
+import { Reveal, Eyebrow, Icon } from "@/components/ui/primitives";
+import { DemoForm } from "./DemoForm";
 
 const ASSURANCES = [
   { icon: "clock" as const, text: "Forty minutes, with an engineer" },
@@ -59,51 +60,51 @@ export function FinalCta() {
 
       <motion.div
         style={{ y: reduced ? 0 : lift, willChange: "transform" }}
-        className="relative mx-auto w-full max-w-3xl text-center"
+        className="relative mx-auto grid w-full max-w-[72rem] items-center gap-10 lg:grid-cols-[1fr_28rem] lg:gap-14"
       >
-        <Reveal>
-          <Eyebrow tone="dark">Ready when you are</Eyebrow>
-        </Reveal>
+        {/* ---- the pitch ---- */}
+        <div className="text-center lg:text-left">
+          <Reveal>
+            <Eyebrow tone="dark">Ready when you are</Eyebrow>
+          </Reveal>
 
-        <Reveal delay={0.08}>
-          <h2 className="text-card-matte mt-7 text-balance font-display text-[clamp(2.3rem,5.4vw,4.4rem)] font-bold leading-[1.02] tracking-[-0.036em]">
-            See it running
-            <br />
-            <span className="font-serif italic">your actual numbers.</span>
-          </h2>
-        </Reveal>
+          <Reveal delay={0.08}>
+            <h2 className="text-card-matte mt-7 text-balance font-display text-[clamp(2.1rem,4.6vw,3.6rem)] font-bold leading-[1.03] tracking-[-0.036em]">
+              See it running
+              <br />
+              <span className="font-serif italic">your actual numbers.</span>
+            </h2>
+          </Reveal>
 
-        <Reveal delay={0.14}>
-          <p className="mx-auto mt-7 max-w-xl text-balance text-[1.06rem] leading-relaxed text-plum-200/60">
-            Bring a month of real invoices and a product list. We will set them
-            up live and show you the ledger entries the system writes for them.
-          </p>
-        </Reveal>
+          <Reveal delay={0.14}>
+            <p className="mx-auto mt-6 max-w-xl text-balance text-[1.04rem] leading-relaxed text-plum-200/60 lg:mx-0">
+              Bring a month of real invoices and a product list. We will set them
+              up live and show you the ledger entries the system writes for them.
+            </p>
+          </Reveal>
 
-        <Reveal delay={0.2}>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-3.5">
-            <Cta href="#demo" variant="light">
-              See it with your data
-              <ArrowRight />
-            </Cta>
-            <Cta href="#deployment" variant="glass">
-              How deployment works
-            </Cta>
-          </div>
-        </Reveal>
+          <Reveal delay={0.2}>
+            <ul className="mt-9 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 lg:justify-start">
+              {ASSURANCES.map((a) => (
+                <li
+                  key={a.text}
+                  className="flex items-center gap-2.5 font-mono text-[0.68rem] uppercase tracking-[0.13em] text-plum-300/45"
+                >
+                  <Icon name={a.icon} className="h-3.5 w-3.5 text-plum-300/60" />
+                  {a.text}
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+        </div>
 
-        <Reveal delay={0.26}>
-          <ul className="mt-12 flex flex-wrap items-center justify-center gap-x-9 gap-y-4">
-            {ASSURANCES.map((a) => (
-              <li
-                key={a.text}
-                className="flex items-center gap-2.5 font-mono text-[0.68rem] uppercase tracking-[0.13em] text-plum-300/45"
-              >
-                <Icon name={a.icon} className="h-3.5 w-3.5 text-plum-300/60" />
-                {a.text}
-              </li>
-            ))}
-          </ul>
+        {/* ---- the form ----
+             This section previously closed with a button pointing at #demo —
+             its own id — so the one call to action on the page scrolled to
+             where you already were. There was no contact route on the site at
+             all; this is it. */}
+        <Reveal delay={0.12} className="min-w-0">
+          <DemoForm />
         </Reveal>
       </motion.div>
     </section>
