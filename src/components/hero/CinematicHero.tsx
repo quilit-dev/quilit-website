@@ -8,6 +8,7 @@ import {
   useTransform,
   useSpring,
   useMotionValue,
+  useMotionValueEvent,
   useReducedMotion,
   type MotionValue,
 } from "motion/react";
@@ -22,6 +23,11 @@ import { cn } from "@/lib/utils";
    0.18 ─ 0.35   ring fills · revenue counter runs · badges pop
    0.24 ─ 0.39   flanking copy slides in · wordmark settles
    0.39 ─ 0.58   HOLD — the composition simply sits and is read
+                 …on desktop. Everything that fills this hold (badges, ring,
+                 trust figures) is xl:/lg: only, so below lg the hold was
+                 996px — 1.2 screens — of scrolling with zero feedback, which
+                 reads as the page having ended. Compact viewports spend the
+                 window on the screen tour instead: see TOUR below.
    0.58 ─ 0.68   contents recede
    0.66 ─ 0.80   stage pulls back to a card · closing CTA resolves
    0.90 ─ 1.00   stage lifts away, revealing what follows
@@ -43,6 +49,24 @@ const TRUST = [
   { value: "431", label: "Automated tests" },
   { value: "EN·AR", label: "Bilingual, RTL" },
 ] as const;
+
+/* The stretch of the timeline that carries no desktop-only instrumentation.
+   Below lg it is handed to the screen tour so scrolling always does something. */
+const TOUR_START = 0.36;
+const TOUR_END = 0.60;
+
+/** True below `lg`, resolved after mount so the server and client agree. */
+function useCompactViewport() {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const sync = () => setCompact(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return compact;
+}
 
 /**
  * Scroll ramp with a pinned tail.
@@ -205,7 +229,9 @@ export function CinematicHero({ className }: { className?: string }) {
   }
 
   return (
-    <div id="hero-runway" ref={runwayRef} className={cn("relative h-[640vh]", className)}>
+    /* Shorter below lg: the same choreography with three fewer things to
+       look at does not need 6.4 screens of runway to play out. */
+    <div id="hero-runway" ref={runwayRef} className={cn("relative h-[520vh] lg:h-[640vh]", className)}>
       <div
         className="sticky top-0 h-screen w-full overflow-hidden bg-bone-100"
         style={{ perspective: 1600 }}
@@ -472,6 +498,22 @@ export function CinematicHero({ className }: { className?: string }) {
             </motion.div>
           </motion.div>
         </div>
+
+        {/* ── proof the scroll is still registering ──
+             The runway is pinned, so on a phone there is no moving scrollbar
+             and no parallax edge to read progress from. Without this the only
+             evidence that a flick did anything is the choreography itself —
+             and the moment that pauses, the page looks finished. Two pixels,
+             composited, sitting above everything. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-50 h-[2px] bg-plum-900/10 lg:hidden"
+        >
+          <motion.div
+            className="h-full origin-left bg-gradient-to-r from-plum-500 to-plum-300"
+            style={{ scaleX: p, willChange: "transform" }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -510,6 +552,7 @@ function Monitor({
      visitor takes control, then stops for good rather than fighting them. */
   const [i, setI] = useState(0);
   const [manual, setManual] = useState(false);
+  const compact = useCompactViewport();
 
   const go = useCallback((delta: number) => {
     setI((v) => (v + delta + SCREENS.length) % SCREENS.length);
@@ -523,11 +566,22 @@ function Monitor({
     [go],
   );
 
+  /* On a wide screen the tour runs on a timer, because the hold is already
+     busy with the badges and the visitor is reading rather than scrolling.
+     Below lg the timer is off and scroll drives it instead — the same four
+     screens, but now they are the reason to keep scrolling. */
   useEffect(() => {
-    if (manual) return;
+    if (manual || compact) return;
     const t = setInterval(() => go(1), 3600);
     return () => clearInterval(t);
-  }, [manual, go]);
+  }, [manual, compact, go]);
+
+  useMotionValueEvent(p, "change", (v) => {
+    if (!compact) return;
+    if (v < TOUR_START || v > TOUR_END) return;
+    const t = (v - TOUR_START) / (TOUR_END - TOUR_START);
+    setI(Math.max(0, Math.min(SCREENS.length - 1, Math.floor(t * SCREENS.length))));
+  });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
